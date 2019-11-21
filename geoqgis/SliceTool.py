@@ -42,7 +42,7 @@ class SliceTool():
             self.wmsLayer.renderer().setOpacity(0.6)
             self.show_ui()
         else:
-            self.iface.messageBar().pushMessage("Error:", "Something went wrong with getting slice. Possibly a connection problem. If error persist, contact gdg@geo.dk",
+            self.iface.messageBar().pushMessage("Error:", "Something went wrong with getting slice. Possibly a connection problem. If error persist, contact data@geo.dk",
             level=Qgis.Critical, duration=5)
 
 

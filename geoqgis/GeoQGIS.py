@@ -203,9 +203,15 @@ class GeoQGIS:
         self.clearMenu()
         
     def helpmessagebox(self):
-        title = "Help"
-        message = "//TODO: Write some help"
-        QMessageBox.information(self.iface.mainWindow(), title, message)
+        msgBox = QMessageBox()
+        msgBox.setWindowTitle( "Help" )
+        msgBox.setTextFormat( Qt.RichText )
+        msgBox.setText( "<br>We Have two manuals to help you along<br>" 
+            + "GeoAtlasLive Manual: <a href='{0}'>{0}</a><br><br>".format("https://wgn.geo.dk/geodata/GeoAtlasLive_Manual.pdf")
+            + "Plugin Manual: <a href='{0}'>{0}</a><br><br>".format("https://wgn.geo.dk/geodata/GeoAtlasPlugin_Manual.pdf"))
+
+        msgBox.setStandardButtons( QMessageBox.Ok )
+        msgBox.exec_() 
 
     def aboutmessagebox(self):
         title = "About"
