@@ -1,0 +1,256 @@
+* {
+    padding: 0;
+    margin: 0;
+    background-color: transparent;
+}
+
+html,
+svg {
+    background-color: transparent;
+}
+
+svg {
+    width: 100%;
+    height: 100%;
+}
+
+body {
+    font-family: "Arial Narrow", Arial, sans-serif;
+    color: hsl(0, 0%, 10%);
+}
+
+.signatur {
+    margin: 5px;
+    margin-top: 20px;
+    padding: 0;
+    flex: 0 0 auto;
+    background: #fff;
+    padding: .5em;
+    border: 1px solid hsl(0, 0%, 80%);
+    overflow: auto;
+    -ms-flex-order: 3;
+    -webkit-box-ordinal-group: 4;
+    order: 3;
+    font-size: 12px;
+}
+
+.signatur li {
+    cursor: help;
+    white-space: nowrap
+}
+
+.signatur li.highlighted {
+    font-weight: 900
+}
+
+.signatur-title {
+    display: inline-block;
+    vertical-align: middle
+}
+
+.signatur-title:after {
+    display: block;
+    content: attr(data-title);
+    font-weight: bold;
+    height: 1px;
+    color: transparent;
+    overflow: hidden;
+    visibility: hidden
+}
+
+[class^="signatur-geoenhed"],
+[class^="signatur-hydromodel"] {
+    width: 1em;
+    height: 1em;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: .5em;
+    border: 1px solid hsl(0, 0%, 90%)
+}
+
+#axis {
+    fill: none;
+    stroke: red;
+    stroke-width: 2px;
+}
+
+#surface-1 {
+    fill: none;
+    stroke: black;
+    stroke-width: 1;
+}
+
+line {
+    stroke: green;
+    stroke-width: 1px;
+}
+
+line.axis {
+    stroke: black;
+    stroke-width: 1px;
+}
+
+line.axis-grid {
+    stroke: darkgray;
+    stroke-width: 1px;
+}
+
+line.sharp-point {
+    stroke-width: 0.6px;
+    stroke: black;
+    stroke-dasharray: 4, 4;
+}
+
+line.boring {
+    stroke: black;
+    stroke-width: 3px;
+}
+
+text.boring-text {
+    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+    font-size: 11px;
+    stroke: black;
+    stroke-width: 0px;
+}
+
+text.axis-text {
+    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+    font-size: 11px;
+    stroke: black;
+    stroke-width: 0px;
+}
+
+#svg-outer-container .signatur {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    float: right;
+    /* position: absolute; */
+    top: 1em;
+    right: 1em;
+    background: #FFF;
+    padding: .5em;
+    border: 1px solid #cccccc;
+}
+
+#svg-container .crosshair {
+    stroke: #505050;
+    stroke-width: 1;
+
+}
+
+.geodatasource-1 {
+    fill: #ff0000;
+    stroke: none;
+}
+
+.geodatasource-2 {
+    fill: #0000ff;
+    stroke: none;
+}
+
+.geodatasource-3 {
+    fill: #2ae7ec;
+    stroke: none;
+}
+
+.geodatasource-4 {
+    fill: #008000;
+    stroke: none;
+}
+
+.geodatasource-5 {
+    fill: #800080;
+    stroke: none;
+}
+
+.geodatasource-6 {
+    fill: #008000;
+    stroke: none;
+}
+
+.geodatasource-7 {
+    fill: #636363;
+    stroke: none;
+}
+
+.geodatasource-8 {
+    fill: #00000F;
+    stroke: none;
+}
+
+.geodatasource-9 {
+    fill: #006A71;
+    stroke: none;
+}
+
+.geodatasource-10 {
+    fill: #A5CD39;
+    stroke: none;
+}
+
+
+.boring {
+    stroke: black;
+    stroke-width: 0.5px;
+    fill: white;
+}
+
+.screen-arrow {
+    stroke: black;
+    stroke-width: 0.5px;
+    fill: #1E90FF;
+}
+
+.screen {
+    stroke: black;
+    stroke-width: 0px;
+    fill: black;
+}
+
+.screen-text {
+    stroke-width: 0px;
+    fill: #1E90FF;
+    font-family: Arial, sans-serif;
+    font-size: 8px;
+}
+
+.sample-text {
+    stroke-width: 0px;
+    fill: black;
+    font-family: Arial, sans-serif;
+    font-size: 8px;
+}
+
+.sample {
+    stroke-width: 0.5px;
+    stroke: black;
+}
+
+text.label-text,
+tspan.label-text,
+a.label-link {
+    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+    font-size: 11px;
+    pointer-events: none;
+}
+
+text.label-text,
+tspan.label-text {
+    pointer-events: none;
+}
+
+a.label-link {
+    pointer-events: all !important;
+    fill: blue;
+    text-decoration: underline;
+}
+
+#logo {
+    pointer-events: none;
+    cursor: pointer;
+}
+
+.flex-container {
+    display: flex;
+}

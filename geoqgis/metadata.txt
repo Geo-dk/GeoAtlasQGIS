@@ -1,0 +1,39 @@
+# This file contains metadata for your plugin Since 
+# version 2.0 of QGIS this is the proper way to supply 
+# information about a plugin. The old method of 
+# embedding metadata in __init__.py will 
+# is no longer supported since version 2.0.
+
+# This file should be included when you package your plugin.# Mandatory items:
+
+[general]
+name=GeoQGIS
+qgisMinimumVersion=3.6
+description=GeoAtlas Live, now in QGIS
+version=1.0
+author=Geo, Hjalte Sorgenfrei Mac Dalland
+email=gdg@geo.dk, hmd@geo.dk
+
+about=This plugin allows for the usage of features found in GeoAtlas Live to be used in QGIS. This includes: Making crosssections of geological models, show geological models for a given depth overlayed and create virtual borings. To use the plugin you need a user for GeoAtlas Live, if you are interested in getting one, contact us.  Through note that only exists for Denmark currently. If you have any feedback or find any bugs, please contact us.
+
+tracker=http://bugs
+repository=http://repo
+# End of mandatory metadata
+
+# Recommended items:
+
+# Uncomment the following line and add your changelog:
+# changelog=
+
+# Tags are comma separated with spaces allowed
+tags=python
+
+homepage=https://data.geo.dk/
+category=Plugins
+icon=icon.png
+# experimental flag
+experimental=True
+
+# deprecated flag (applies to the whole plugin, not just a single version)
+deprecated=False
+
