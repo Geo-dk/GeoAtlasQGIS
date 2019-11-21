@@ -16,8 +16,8 @@ email=gdg@geo.dk, hmd@geo.dk
 
 about=This plugin allows for the usage of features found in GeoAtlas Live to be used in QGIS. This includes: Making crosssections of geological models, show geological models for a given depth overlayed and create virtual borings. To use the plugin you need a user for GeoAtlas Live, if you are interested in getting one, contact us.  Through note that only exists for Denmark currently. If you have any feedback or find any bugs, please contact us.
 
-tracker=http://bugs
-repository=http://repo
+tracker=https://github.com/Geo-dk/GeoAtlasQGIS/issues
+repository=https://github.com/Geo-dk/GeoAtlasQGIS
 # End of mandatory metadata
 
 # Recommended items:
