@@ -51,7 +51,6 @@ class SliceDialog(QtWidgets.QDialog, FORM_CLASS):
         self.koteButton.clicked.connect(self.changeToKoteView)
         self.koteButton.clicked.connect(self.slicer.updateSlice)
         self.selectLayerButton.clicked.connect(self.slicer.changeSelectedlayer)
-        self.depthNumber.valueChanged.connect(self.slicer.updateSlice)
     
     def updatelayerName(self, text):
         self.selectedLayerLabel.setText(text)

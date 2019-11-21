@@ -212,7 +212,6 @@ class Crosssection():
             url += "&linepointdistance=" + str(settings.linepoint)
             if settings.drilldistance > 0:
                 url += "&MaxBoringDistance=" + str(settings.drilldistance)
-            debugMsg(url)
             return requests.get(url, headers={'authorization': self.apiKeyGetter.getApiKey()}).json()
     
     def fixSvg(self, svg, settings):
@@ -281,7 +280,6 @@ class Crosssection():
 
 
     def testReport(self):
-        debugMsg(self.usersettings.getlayout())
         if self.usersettings.getlayout() is not '' and os.path.exists(self.usersettings.getlayout()):
             dir_path = self.usersettings.getlayout()
         else:

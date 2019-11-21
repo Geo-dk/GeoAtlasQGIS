@@ -93,7 +93,6 @@ class SliceTool():
         url += "&token=" + self.apiKeyGetter.getApiKeyNoBearer()
         quri.setParam("url", url)
         uri = str(quri.encodedUri())[2:-1]
-        debugMsg(uri)
         return uri
 
     def updateLayerName(self, sliceType, depth):
@@ -112,7 +111,6 @@ class SliceTool():
     def getModels(self):
             bbox = self.getBboxFromScreen()
             self.currentModels = get_models_for_bounding_box(bbox,self.apiKeyGetter.getApiKey())
-            debugMsg(self.currentModels)
             self.modelid = 0 
             #If no models exist for this area, use the Terræn model.
             if self.currentModels:
@@ -125,8 +123,6 @@ class SliceTool():
                     debugMsg(e)
                     self.model = self.currentModels[0]
                 self.modelid = self.model['ID']
-                debugMsg(self.modelid)
-                debugMsg(self.model)
                 self.dlg.setModels([item['Name'] for item in self.currentModels if 'Name' in item])
 
     def getBboxFromScreen(self):

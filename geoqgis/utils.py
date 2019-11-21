@@ -83,7 +83,7 @@ def getModelsFromCordList(coordinates, apikey):
             models.append(model)
     #Sort them for faster removal
     if len(models) == 0:
-        debugMsg("No models for this area")
+        debugMsg("No models for this area: " + coordinates)
     return models
     #If there is no models in the lists, then we couldnt find any.
 
