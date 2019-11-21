@@ -137,15 +137,12 @@ class GeoQGIS:
         actions = self.iface.mainWindow().menuBar().actions()
         lastAction = actions[-1]
         self.iface.mainWindow().menuBar().insertMenu( lastAction, self.menu )
-        self.menu.addAction( 'Crosssection', self.crosssectionTool.createNewLineAndCrossSection )
         self.menu.addAction( 'Add models to map', self.addModelsToMap)
-        self.menu.addAction( 'Virtual Boring', self.virtualBoring.changeToBoringTool)
-        self.menu.addAction( 'Slice Tool', self.sliceTool.startSliceTool)
         #self.menu.addAction( 'Print Api Key', self.apiKeyGetter.printApiKey)
         self.menu.addAction( 'Tilføj boringer', self.addBoreHoles)
+        self.menu.addAction( 'Update Tokens', self.update_GAL_layers_with_tokens)
         self.menu.addAction( 'Help', self.helpmessagebox)
         self.menu.addAction( 'About', self.aboutmessagebox)
-        self.menu.addAction( 'UpdateTokens', self.update_GAL_layers_with_tokens)
 
         self.myToolBar = self.iface.mainWindow().findChild( QToolBar, u'GeoAtlasToolBar' )
         if not self.myToolBar:
