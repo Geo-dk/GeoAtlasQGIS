@@ -247,7 +247,7 @@ class GeoQGIS:
         quri.setParam("dpiMode", '7')
         quri.setParam("featureCount", '10')
         quri.setParam("format", 'image/png')
-        quri.setParam("layers", 'GEO-Services:borehole')
+        quri.setParam("layers", 'GEO-Services:borehole-filtered')
         quri.setParam("styles", 'GEO-Services:borehole_labels')
         url = 'https://data.geo.dk/map/GEO-Services/wms?VERSION=1.3.0&FORMAT=image%2Fpng&TRANSPARENT=true&layers=borehole-filtered&styles=borehole_labels&CRS=EPSG%3A25832&STYLES='
         url += "&token=" + str(self.apiKeyGetter.getApiKeyNoBearer())

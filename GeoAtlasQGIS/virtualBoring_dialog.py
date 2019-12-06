@@ -32,7 +32,7 @@ from PyQt5.QtGui import *
 
 # This loads your .ui file so that PyQt can populate your plugin with the elements from Qt Designer
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
-    os.path.dirname(__file__), 'virtualBoring_dialog_base.ui'))
+    os.path.dirname(__file__), 'forms/virtualBoring_dialog_base.ui'))
 
 
 class VirtualBoringDialog(QtWidgets.QDialog, FORM_CLASS):
