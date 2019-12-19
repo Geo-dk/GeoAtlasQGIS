@@ -10,7 +10,7 @@
 name=GeoAtlasQGIS 
 qgisMinimumVersion=3.6
 description=GeoAtlas Live, now in QGIS
-version=1.1
+version=1.2
 author=Geo
 email=data@geo.dk
 
