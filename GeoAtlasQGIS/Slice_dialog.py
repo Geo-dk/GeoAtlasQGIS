@@ -48,8 +48,8 @@ class SliceDialog(QtWidgets.QDialog, FORM_CLASS):
         self.ModelComboBox.activated.connect(self.slicer.updateSlice)
         self.dhmButton.clicked.connect(self.changeToDhmView)
         self.dhmButton.clicked.connect(self.slicer.updateSlice)
-        self.koteButton.clicked.connect(self.changeToKoteView)
-        self.koteButton.clicked.connect(self.slicer.updateSlice)
+        self.levelButton.clicked.connect(self.changeToKoteView)
+        self.levelButton.clicked.connect(self.slicer.updateSlice)
         self.selectLayerButton.clicked.connect(self.slicer.changeSelectedlayer)
     
     def updatelayerName(self, text):
@@ -80,7 +80,7 @@ class SliceDialog(QtWidgets.QDialog, FORM_CLASS):
         return self.depthNumber.value()
 
     def getSliceType(self):
-        if self.koteButton.isChecked():
+        if self.levelButton.isChecked():
             return "slice_kote"
         if self.dhmButton.isChecked():
             return "slice_dhm"

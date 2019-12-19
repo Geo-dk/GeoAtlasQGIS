@@ -110,7 +110,7 @@
              </size>
             </property>
             <property name="title">
-             <string>Valg af Slice Type</string>
+             <string>Choose Slice Type</string>
             </property>
             <layout class="QHBoxLayout" name="horizontalLayout_6">
              <property name="spacing">
@@ -131,7 +131,7 @@
              <item>
               <widget class="QRadioButton" name="dhmButton">
                <property name="text">
-                <string>Dybde</string>
+                <string>Depth</string>
                </property>
                <property name="checked">
                 <bool>false</bool>
@@ -139,9 +139,9 @@
               </widget>
              </item>
              <item>
-              <widget class="QRadioButton" name="koteButton">
+              <widget class="QRadioButton" name="levelButton">
                <property name="text">
-                <string>Kote</string>
+                <string>Level</string>
                </property>
                <property name="checkable">
                 <bool>true</bool>
@@ -171,7 +171,7 @@
               <item>
                <widget class="QLabel" name="depth_text">
                 <property name="text">
-                 <string>kote (m)</string>
+                 <string>Level (m)</string>
                 </property>
                </widget>
               </item>

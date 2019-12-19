@@ -21,7 +21,7 @@
        <item>
         <widget class="QLabel" name="label">
          <property name="text">
-          <string>Depth (Kote)</string>
+          <string>Depth (Level)</string>
          </property>
         </widget>
        </item>
@@ -193,7 +193,7 @@ svg {
      <item>
       <widget class="QPushButton" name="Report">
        <property name="text">
-        <string>Lav Layout</string>
+        <string>Make Layout</string>
        </property>
       </widget>
      </item>

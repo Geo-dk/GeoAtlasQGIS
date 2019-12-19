@@ -139,7 +139,7 @@ class GeoQGIS:
         self.iface.mainWindow().menuBar().insertMenu( lastAction, self.menu )
         self.menu.addAction( 'Add models to map', self.addModelsToMap)
         #self.menu.addAction( 'Print Api Key', self.apiKeyGetter.printApiKey)
-        self.menu.addAction( 'Tilføj boringer', self.addBoreHoles)
+        self.menu.addAction( 'Add Boreholes to map', self.addBoreHoles)
         self.menu.addAction( 'Update Tokens', self.update_GAL_layers_with_tokens)
         self.menu.addAction( 'Help', self.helpmessagebox)
         self.menu.addAction( 'About', self.aboutmessagebox)
@@ -177,16 +177,16 @@ class GeoQGIS:
 
 
     def addActionsToActionBar(self):
-        crosstool = QAction(QIcon( self.plugin_dir + "/images/cross.png"), 'Få profil af eksisterne linje', self.iface.mainWindow())
+        crosstool = QAction(QIcon( self.plugin_dir + "/images/cross.png"), 'Get profile of existing line', self.iface.mainWindow())
         crosstool.triggered.connect(self.crosssectionTool.crossectionExistingLine)
         self.myToolBar.addAction(crosstool)
-        crosstool2 = QAction(QIcon( self.plugin_dir + "/images/crossNew.png"), 'Få Profil af ny linje', self.iface.mainWindow())
+        crosstool2 = QAction(QIcon( self.plugin_dir + "/images/crossNew.png"), 'Get profile of new line', self.iface.mainWindow())
         crosstool2.triggered.connect(self.crosssectionTool.createNewLineAndCrossSection)
         self.myToolBar.addAction(crosstool2)
-        slicetool = QAction(QIcon( self.plugin_dir + "/images/slice.png"), 'Åben Slice view', self.iface.mainWindow())
+        slicetool = QAction(QIcon( self.plugin_dir + "/images/slice.png"), 'Open Slice view', self.iface.mainWindow())
         slicetool.triggered.connect(self.sliceTool.startSliceTool)
         self.myToolBar.addAction(slicetool)
-        boretool = QAction(QIcon( self.plugin_dir + "/images/bore.png"), 'Lav Boring', self.iface.mainWindow())
+        boretool = QAction(QIcon( self.plugin_dir + "/images/bore.png"), 'Make virtual borehole', self.iface.mainWindow())
         boretool.triggered.connect(self.virtualBoring.changeToBoringTool)
         self.myToolBar.addAction(boretool)
 
@@ -232,7 +232,7 @@ class GeoQGIS:
 
     def addBoreHoles(self):
         uri = self.getBoreHoleUri()
-        wmsLayer = QgsRasterLayer(uri,"GAL - Boringer","wms")
+        wmsLayer = QgsRasterLayer(uri,"GAL - Boreholes","wms")
         wmsLayer.dataProvider().setDataSourceUri(uri)
         QgsProject.instance().addMapLayer(wmsLayer, False)
         add_layer_to_group(wmsLayer)
@@ -267,8 +267,10 @@ class GeoQGIS:
         modelsstring += "-1"
         #should be crossplatform method of saving to tempdir.
         tmppath = str(tempfile.gettempdir()) + "\\GeoAtlas\\"
-        wfs = requests.get("https://data.geo.dk/map/GEO-Services/wfs?service=WFS&version=1.0&REQUEST=GetFeature&typeName=GEO-Services:geomodel_area&CQL_FILTER=GeoModelId%20in%20(" + modelsstring + ")")
-        wfs += "&token=" + str(self.apiKeyGetter.getApiKeyNoBearer())
+        url = "https://data.geo.dk/map/GEO-Services/wfs?service=WFS&version=1.0&REQUEST=GetFeature&typeName=GEO-Services:geomodel_area&CQL_FILTER=GeoModelId%20in%20(" + modelsstring + ")"
+        url += "&token=" + str(self.apiKeyGetter.getApiKeyNoBearer())
+        debugMsg(url)
+        wfs = requests.get(url)
         if not os.path.isdir(tmppath):
             os.mkdir(tmppath)
         #Save it to file, because qgsvectorlayer only works with files.
