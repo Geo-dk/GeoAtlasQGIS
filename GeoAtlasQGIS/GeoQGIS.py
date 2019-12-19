@@ -269,7 +269,6 @@ class GeoQGIS:
         tmppath = str(tempfile.gettempdir()) + "\\GeoAtlas\\"
         url = "https://data.geo.dk/map/GEO-Services/wfs?service=WFS&version=1.0&REQUEST=GetFeature&typeName=GEO-Services:geomodel_area&CQL_FILTER=GeoModelId%20in%20(" + modelsstring + ")"
         url += "&token=" + str(self.apiKeyGetter.getApiKeyNoBearer())
-        debugMsg(url)
         wfs = requests.get(url)
         if not os.path.isdir(tmppath):
             os.mkdir(tmppath)
