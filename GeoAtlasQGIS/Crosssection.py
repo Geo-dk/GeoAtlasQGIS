@@ -134,7 +134,7 @@ class Crosssection():
 
     def makeLayer(self):
         layer = QgsVectorLayer("multilinestring?crs=epsg:25832", DEFAULTLAYERNAME, "memory")
-        layer.renderer().symbol().setColor(QColor.fromRgb(35,35,255))
+        layer.renderer().symbol().setColor(QColor.fromRgb(35, 35, 255))
         layer.renderer().symbol().setWidth(1)
         QgsProject.instance().addMapLayer(layer, False)
         layer.loadNamedStyle(self.dirpath + "\\styles\\linestyle.qml")
