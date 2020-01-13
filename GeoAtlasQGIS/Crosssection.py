@@ -73,7 +73,7 @@ class Crosssection():
         self.dlg.setSeportFunction(self.testReport)
 
     def show_ui(self):
-        self.iface.addDockWidget( Qt.BottomDockWidgetArea, self.dock )
+        self.iface.addDockWidget(Qt.BottomDockWidgetArea, self.dock )
 
     def addFeatureAndSectionIt(self):
         self.getworkinglayer().startEditing()
@@ -252,7 +252,7 @@ class Crosssection():
         self.dlg.setHtml(svg)
 
     def getAvailableModels(self, coordinates):
-        return getModelsFromCordList(coordinates,self.apiKeyGetter.getApiKey())
+        return getModelsFromCordList(coordinates, self.apiKeyGetter.getApiKey())
 
     def boreHoleBuffer(self, settings):
         layer = self.getworkinglayer()
