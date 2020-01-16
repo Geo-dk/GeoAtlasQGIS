@@ -17,6 +17,7 @@ class VirtualBoringTool():
         self.DEFAULTLAYERNAME = "GAL - Virtual Boring"
 
     def display_point(self, pointToolCoordinates ): 
+        # Gets the coordinates in and changes the users tool back.
         self.iface.mapCanvas().unsetMapTool(self.pointTool)
         coords = self.transformToCorrectCRS(pointToolCoordinates)
         self.getBoring(coords)
@@ -33,6 +34,7 @@ class VirtualBoringTool():
         if self.dlg is None:
             self.makeUi()
         layers = QgsProject.instance().mapLayersByName(self.DEFAULTLAYERNAME)
+        # If we dont make sure we operate on our layer, we might delete users data
         if layers is not None and len(layers) > 0 and layerIsVector(layers[0]):
             self.workinglayer = layers[0]
         else:
@@ -40,6 +42,8 @@ class VirtualBoringTool():
        
         self.x = coords[0]
         self.y = coords[1]
+
+        #Remove all borings on layer and make a new one.
         if self.workinglayer.dataProvider().featureCount() > 0:
             self.workinglayer.dataProvider().truncate()
         self.boring = self.addBoringSpot(self.x, self.y)
@@ -55,6 +59,7 @@ class VirtualBoringTool():
 
     def updateBoring(self):
         self.iface.addDockWidget( Qt.RightDockWidgetArea, self.dock )
+        # Use task for multithreading
         self.sectionTask = QgsTask.fromFunction('Update Boring', self.makeBoring, self.x, self.y, self.getCurrentModel(), self.dlg.getDepth(), self.apiKeyGetter.getApiKey(), on_finished=self.boringcallback)
         QgsApplication.taskManager().addTask(self.sectionTask)
 

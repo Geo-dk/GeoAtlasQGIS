@@ -26,6 +26,7 @@ QgsApplication.processingRegistry().addProvider(QgsNativeAlgorithms())
 DEFAULTLAYERNAME = 'GAL - Lines'
 
 class CrosssectionSettings():
+    #Used for sending settings for crosssection around. Default values here work
     def __init__(self):
         self.depth = 30
         self.width = 1000
@@ -54,6 +55,7 @@ class Crosssection():
         return False
 
     def crossectionExistingLine(self): 
+        # If we already have UI, we shouldnt make a new one.
         if self.dlg is None:
             self.makeUI()       
         self.updateCrosssection()
@@ -76,14 +78,19 @@ class Crosssection():
         self.iface.addDockWidget(Qt.BottomDockWidgetArea, self.dock )
 
     def addFeatureAndSectionIt(self):
+        # Go into editing mode.
         self.getworkinglayer().startEditing()
+        # Change the mouse mode to adding feature.
         self.iface.actionAddFeature().trigger()
         #Make it update crossection when its done.
+        # By having the tool call when feature is done.
         self.featureTool = self.iface.mapCanvas().mapTool()
+        # TODO: Fix that both of these removes the connections.
         self.iface.mapCanvas().mapTool().deactivated.connect(self.removeFeatureConnect)
         self.getworkinglayer().featureAdded.connect(self.crossSectionLastAdded)
         
     def removeFeatureConnect(self):
+        #TODO: Fix that this gets called without anythign to disconnect
         try:
             self.getworkinglayer().featureAdded.disconnect(self.crossSectionLastAdded)
         except:
@@ -94,9 +101,11 @@ class Crosssection():
             pass
 
     def crossSectionLastAdded(self, fid):
+        # The featureid (fid) comes from the feature being added.
         self.getworkinglayer().selectByIds([fid])
         self.iface.actionSelect().trigger()
         self.getworkinglayer().commitChanges()
+        # Save the changes and update the crosssection view
         self.removeFeatureConnect()
         self.updateCrosssection()
 
@@ -106,6 +115,9 @@ class Crosssection():
         return self.workinglayer
 
     def updateCrosssection(self):
+        # All the ifs are to check if the line is usable for getting cordinate info out
+        # Could be much prettier
+        # TODO: Make pretty
         if layerIsVector(self.getworkinglayer()):
             self.line = self.getSelectedLine(self.getworkinglayer())
             if self.line and hasattr(self.line, '__geo_interface__'):
@@ -116,11 +128,13 @@ class Crosssection():
                 else:
                     self.iface.messageBar().pushMessage("Warning:", "Selected Line is not valid", level=Qgis.Warning, duration=5)
             else:
+                # Might be incorrect to call this here.
                 self.addFeatureAndSectionIt()
         else:
             self.iface.messageBar().pushMessage("Warning:", "No line selected or wrong layer selected.", level=Qgis.Warning, duration=5)
 
     def chooseOrMakeAppropriateLayer(self):
+        # Looks for a the layer to work on, so we dont clutter the project
         if layerIsVector(self.iface.activeLayer()):
             self.workinglayer = self.iface.activeLayer()
             return
@@ -137,6 +151,7 @@ class Crosssection():
         layer.renderer().symbol().setColor(QColor.fromRgb(35, 35, 255))
         layer.renderer().symbol().setWidth(1)
         QgsProject.instance().addMapLayer(layer, False)
+        # The style has Colors, labels
         layer.loadNamedStyle(self.dirpath + "\\styles\\linestyle.qml")
         add_layer_to_group(layer)
         self.workinglayer = layer
@@ -148,17 +163,22 @@ class Crosssection():
         coords = reduceTo2dList(line.__geo_interface__["geometry"]["coordinates"])
         self.coords = transformToProjection(25832, coords, self.getworkinglayer())
         self.settings = CrosssectionSettings()
+        # Height and width makes sure that the crosssection is as large as possible.
+        # The "-80" keeps space for the layer legend
         self.settings.width = self.dlg.getHtmlFrame().frameGeometry().width() - 80
         self.settings.height = self.dlg.getHtmlFrame().frameGeometry().height()
         self.settings.depth = self.dlg.getDepth()
         self.settings.drilldistance = self.dlg.getDrillDistance()
         self.settings.linepoint = self.calculateLinePoint(self.line, self.settings)
+
+        # Tasks are the only way of having working multithreading
         self.sectionTask = QgsTask.fromFunction('Update Crosssection', self.performCrosssection, self.coords, self.settings, on_finished=self.crosssectiontaskcallback)
         QgsApplication.taskManager().addTask(self.sectionTask)
         self.boreHoleBuffer(self.settings)
         
 
     def crosssectiontaskcallback(self, result, section):
+        # Result is a required parameter for tasks to work.
         self.show_ui()
         self.updateDisplayedModels()
         if section:
@@ -167,11 +187,14 @@ class Crosssection():
             self.updateSVGDisplayed(self.html)
 
     def performCrosssection(self, task, coords, settings):
+        # Task is a required parameter for tasks to work and contains the current tasks
         settings.modelid = self.updateAvaibleModels(coords)
         section = self.getCrosssectionFromUri(coords, settings)
+        # Returned values in tasks gets send to reciever as parameters
         return section
         
     def calculateLinePoint(self, line, settings):
+        # This values seems correct, but was made before the update to have auto in the api
         calculatedvalue = math.ceil(line.geometry().length()/settings.width)
         return max(calculatedvalue, 1)
 
@@ -215,6 +238,7 @@ class Crosssection():
             return requests.get(url, headers={'authorization': self.apiKeyGetter.getApiKey()}).json()
     
     def fixSvg(self, svg, settings):
+        # The returned SVG is missing parts to render currectly. 
         svg = svg.replace("-webkit-font-smoothing: antialiased;", "")
         s = '<svg viewBox="0 0 '
         s+= str(settings.width) + ' ' + str(settings.height)
@@ -224,6 +248,7 @@ class Crosssection():
         return svg
 
     def createHtmlframe(self, svg, settings, section, cssfile):
+        # The HTML helps make the SVG show more nicely by having the legend at the side
         html = '<!DOCTYPE html> <html><head>'
         html += '<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />'
         html += '<title>QGIS</title> <style>'
@@ -237,6 +262,7 @@ class Crosssection():
         return html
 
     def createLegend(self, section):
+        # Behavior should be the same as the websites version here. 
         html = '<ul class="signatur">'
         for geoenhed in section['Model']['GeoEnheder']:
             li = '<li data><span class="signatur-geoenhed-'
@@ -262,8 +288,10 @@ class Crosssection():
         #Set the buffer to be the right size. 
         output = processing.run('native:buffer', {"INPUT": layer, "SEGMENTS": 12, "END_CAP_STYLE": 1, "JOIN_STYLE": 0, "MITER_LIMIT": 2, "DISSOLVE": False, "DISTANCE": settings.drilldistance, "OUTPUT": 'memory:' + outlayername})
         outputlayers = QgsProject.instance().mapLayersByName(outlayername)
+        # If we already have a layer for buffer, use that.
         if len(outputlayers) != 0:
             outputlayer = outputlayers[0]
+            #Redo all buffers to be correct width.
             with edit(outputlayer):
                 listOfIds = [feat.id() for feat in outputlayer.getFeatures()]
                 outputlayer.deleteFeatures(listOfIds)
@@ -275,11 +303,14 @@ class Crosssection():
             layertoadd.renderer().symbol().setColor(QColor.fromRgb(180,180,180))
             layertoadd.setOpacity(0.4)
             QgsProject.instance().addMapLayer(layertoadd)
+        #Change the active layer back, as adding a new one changes it.
         self.iface.setActiveLayer(layer)
             
 
 
     def testReport(self):
+        # Here there be dragons. 
+        # TODO: Refactor this whole functions out into a seperate class.
         if self.usersettings.getlayout() is not '' and os.path.exists(self.usersettings.getlayout()):
             dir_path = self.usersettings.getlayout()
         else:

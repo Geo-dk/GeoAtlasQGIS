@@ -47,6 +47,7 @@ def reduceTo2dList(largeList):
         return largeList
 
 def debugMsg(message):
+    #Puts text in the logs.
     QgsMessageLog.logMessage(str(message), tag="GeoAtlas", level = Qgis.Info)
 
 """https://data.geo.dk/api/v2/MapLegend?name=slice-kote&modelid=30&bbox=722482.0000000001,6174676.000000001,724221.2000000001,6175978.400000001&kote=-10"""
@@ -67,6 +68,7 @@ class GeoBoundingBox:
 SAVEDMODELS = None
 
 def getModelsFromCordList(coordinates, apikey):
+    # Later on using WFS models might be useful, as it allows for greater accuracy 
     global SAVEDMODELS
     if SAVEDMODELS is None:
         SAVEDMODELS = requests.get("https://data.geo.dk/api/v2/geomodel", headers={'authorization': apikey}).json()
@@ -81,7 +83,6 @@ def getModelsFromCordList(coordinates, apikey):
                 insidemodel = True
         if insidemodel:
             models.append(model)
-    #Sort them for faster removal
     if len(models) == 0:
         debugMsg("No models for this area: " + coordinates)
     return models
@@ -104,6 +105,8 @@ def getBoundingBox(coordinates):
         maxY = max(maxY, coord[1])
     return minX, minY, maxX, maxY
 
+
+#Quick maths
 def getDistanceOfLine(coords):
     return sqrt((coords[-1][1]-coords[0][1])**2+(coords[-1][0]-coords[0][0])**2)
 

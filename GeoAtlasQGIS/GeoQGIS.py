@@ -65,8 +65,10 @@ class GeoQGIS:
         # Save reference to the QGIS interface
         self.iface = iface
         # initialize plugin directory
+        # Used for finding files in the directory.
         self.plugin_dir = os.path.dirname(__file__)
         # initialize locale
+        # Currently unused, but useful if we start translating.
         locale = QSettings().value('locale/userLocale')[0:2]
         locale_path = os.path.join(
             self.plugin_dir,
@@ -89,6 +91,7 @@ class GeoQGIS:
        
 
         # Declare instance attributes
+        # Actions for action bar
         self.actions = []
         self.menu = self.tr(u'&GeoQGIS')
         self.currentModels = None
@@ -103,6 +106,8 @@ class GeoQGIS:
         self.sliceTool = SliceTool(self.iface, self.apiKeyGetter)
         self.crosssectionTool = Crosssection(self.iface, self.apiKeyGetter, self.settings)
         self.report = ReportTool(self.iface, self.apiKeyGetter)
+        # Timer is used for regularly updating tokens and keeping access to 
+        # wms layers as the tokens only last for 22 hours.
         self.register_timer_for_token_updater()
         self.update_GAL_layers_with_tokens()
         
@@ -123,16 +128,21 @@ class GeoQGIS:
         return QCoreApplication.translate('GeoQGIS', message)
 
     def register_timer_for_token_updater(self):
+        # When we load a new project, update the tokens in it.
         self.iface.projectRead.connect(self.update_token_on_project_load)
         self.timer = QTimer()
         
         self.timer.timeout.connect(self.update_GAL_layers_with_tokens)
         self.timer.start(1000 * 60 * 30) #Is in miliseconds. So runs every half hour
+        # Should be okay as it last for 22 hours.
 
     def update_token_on_project_load(self):
+        # Wait for 10 seconds before updating tokens, as it seems doing it while loading 
+        # makes QGIS crash.
         self.timer.singleShot(10000, self.update_GAL_layers_with_tokens)
 
     def makeMenu(self):
+        # Tool bar menu.
         self.menu = QMenu( "GeoAtlas", self.iface.mainWindow().menuBar() )
         actions = self.iface.mainWindow().menuBar().actions()
         lastAction = actions[-1]
@@ -155,6 +165,7 @@ class GeoQGIS:
     def update_GAL_layers_with_tokens(self):
         debugMsg("Updating Tokens.")
         token_regex = r'(&|%26)?token([=:]|%3A|%3D)(?P<Token>[\d\w\.=+-_\/]*)'
+        #Find all layers with tokens in them, which are updatable and created by us.
         for layer in self.iface.mapCanvas().layers():
             if not layer.name().startswith("GAL"):
                 continue
@@ -169,6 +180,7 @@ class GeoQGIS:
             if not token:
                 continue
             token = token.group('Token')
+            # make sure the function exists, else we crash
             if callable(getattr(layer, "setDataSource", None)):
                 debugMsg("  Updated Token for layer: " + layer.name())
                 uri = uri.replace(token, self.apiKeyGetter.getApiKeyNoBearer())
@@ -177,6 +189,7 @@ class GeoQGIS:
 
 
     def addActionsToActionBar(self):
+        # The action menu bar. 
         crosstool = QAction(QIcon( self.plugin_dir + "/images/cross.png"), 'Get profile of existing line', self.iface.mainWindow())
         crosstool.triggered.connect(self.crosssectionTool.crossectionExistingLine)
         self.myToolBar.addAction(crosstool)
@@ -231,6 +244,7 @@ class GeoQGIS:
             self.menu.deleteLater()
 
     def addBoreHoles(self):
+        # Add boreholes with labels as a wms to current project.
         uri = self.getBoreHoleUri()
         wmsLayer = QgsRasterLayer(uri,"GAL - Boreholes","wms")
         wmsLayer.dataProvider().setDataSourceUri(uri)
@@ -239,6 +253,7 @@ class GeoQGIS:
         wmsLayer.triggerRepaint()
 
     def getBoreHoleUri(self):
+        # Build up the uri
         quri = QgsDataSourceUri()
         quri.setParam("IgnoreGetFeatureInfoUrl", '1') 
         quri.setParam("IgnoreGetMapUrl", '1')
@@ -265,6 +280,7 @@ class GeoQGIS:
             modelsstring += str(model['ID']) + ","
         #-1 is used on the website
         modelsstring += "-1"
+        # TODO: find a way of not using a directory. In memory should be possible
         #should be crossplatform method of saving to tempdir.
         tmppath = str(tempfile.gettempdir()) + "\\GeoAtlas\\"
         url = "https://data.geo.dk/map/GEO-Services/wfs?service=WFS&version=1.0&REQUEST=GetFeature&typeName=GEO-Services:geomodel_area&CQL_FILTER=GeoModelId%20in%20(" + modelsstring + ")"

@@ -35,6 +35,7 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
 
 class SliceDialog(QtWidgets.QDialog, FORM_CLASS):
     def __init__(self, slicer, parent=None):
+        #Slicer is the slice tool which is actually used.
         self.slicer = slicer
         """Constructor."""
         super(SliceDialog, self).__init__(parent)

@@ -25,6 +25,10 @@ class SliceTool():
  
     def startSliceTool(self):
         self.wmsLayer = None # reset the selected layer
+        # Preview jobs is stuff rendered around the current view.
+        # The were disabled in hope of removing crashes
+        # As it appears that crashes happens when changing the layer while
+        # it is rendering.
         if self.iface.mapCanvas().previewJobsEnabled():
             self.iface.mapCanvas().setPreviewJobsEnabled(False)
 
@@ -35,6 +39,7 @@ class SliceTool():
 
         self.getModels()
         uri = self.build_uri(self.dlg.getSliceType(), self.dlg.getDepth(), self.modelid)
+        # Create the temporary layer we can work on and get crs from
         self.wmsLayer = QgsRasterLayer(uri,self.updateLayerName(self.dlg.getSliceType(), self.dlg.getDepth()),"wms")
         QgsProject.instance().addMapLayer(self.wmsLayer, False)
         add_layer_to_group(self.wmsLayer)
@@ -92,7 +97,7 @@ class SliceTool():
             url += "depth:" + str(abs(depth))
         url += "&token=" + self.apiKeyGetter.getApiKeyNoBearer()
         quri.setParam("url", url)
-        uri = str(quri.encodedUri())[2:-1]
+        uri = str(quri.encodedUri())[2:-1] #Removes "" around the string i think
         return uri
 
     def updateLayerName(self, sliceType, depth):
@@ -113,6 +118,7 @@ class SliceTool():
             self.currentModels = get_models_for_bounding_box(bbox,self.apiKeyGetter.getApiKey())
             self.modelid = 0 
             #If no models exist for this area, use the Terræn model.
+            # Through this has no usage for slice
             if self.currentModels:
                 try:
                     #Get the currently selected model in the combobox.
