@@ -13,23 +13,125 @@
   <property name="windowTitle">
    <string>GeoQGIS</string>
   </property>
-  <widget class="QWebView" name="htmlFrame" native="true">
-   <property name="geometry">
-    <rect>
-     <x>9</x>
-     <y>9</y>
-     <width>841</width>
-     <height>275</height>
-    </rect>
-   </property>
-   <property name="baseSize">
-    <size>
-     <width>0</width>
-     <height>0</height>
-    </size>
-   </property>
-   <property name="styleSheet">
-    <string notr="true">* { padding: 0; margin: 0; }
+  <layout class="QGridLayout" name="gridLayout_2">
+   <item row="1" column="2">
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <layout class="QVBoxLayout" name="verticalLayout_3">
+       <item>
+        <widget class="QLabel" name="label">
+         <property name="text">
+          <string>Depth (Level)</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_5">
+         <item>
+          <widget class="QSlider" name="depthslider">
+           <property name="minimum">
+            <number>-200</number>
+           </property>
+           <property name="maximum">
+            <number>200</number>
+           </property>
+           <property name="sliderPosition">
+            <number>-40</number>
+           </property>
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_2">
+           <item>
+            <widget class="QSpinBox" name="depthNumber">
+             <property name="minimum">
+              <number>-200</number>
+             </property>
+             <property name="maximum">
+              <number>200</number>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_3">
+             <property name="text">
+              <string>m</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <layout class="QVBoxLayout" name="verticalLayout_2">
+       <item>
+        <widget class="QLabel" name="label_2">
+         <property name="text">
+          <string>Drill dist.</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout6">
+         <item>
+          <widget class="QSlider" name="drilldistance">
+           <property name="minimum">
+            <number>0</number>
+           </property>
+           <property name="maximum">
+            <number>1000</number>
+           </property>
+           <property name="sliderPosition">
+            <number>0</number>
+           </property>
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_8">
+           <item>
+            <widget class="QSpinBox" name="drillNumber">
+             <property name="minimum">
+              <number>0</number>
+             </property>
+             <property name="maximum">
+              <number>1000</number>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_4">
+             <property name="text">
+              <string>m</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </item>
+    </layout>
+   </item>
+   <item row="0" column="0" rowspan="6">
+    <widget class="QWebView" name="htmlFrame" native="true">
+     <property name="baseSize">
+      <size>
+       <width>0</width>
+       <height>0</height>
+      </size>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">* { padding: 0; margin: 0; }
 html, body, #fullheight {
     min-height: 100% !important;
     height: 100%;
@@ -42,205 +144,62 @@ svg {
     width:100%;
     height: 100%;
 }</string>
-   </property>
-  </widget>
-  <widget class="QComboBox" name="ModelComboBox">
-   <property name="geometry">
-    <rect>
-     <x>1029</x>
-     <y>233</y>
-     <width>69</width>
-     <height>20</height>
-    </rect>
-   </property>
-   <property name="sizePolicy">
-    <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-     <horstretch>0</horstretch>
-     <verstretch>0</verstretch>
-    </sizepolicy>
-   </property>
-   <property name="maximumSize">
-    <size>
-     <width>150</width>
-     <height>16777215</height>
-    </size>
-   </property>
-   <property name="baseSize">
-    <size>
-     <width>0</width>
-     <height>0</height>
-    </size>
-   </property>
-  </widget>
-  <widget class="QWebView" name="legendFrame" native="true">
-   <property name="geometry">
-    <rect>
-     <x>860</x>
-     <y>9</y>
-     <width>160</width>
-     <height>275</height>
-    </rect>
-   </property>
-   <property name="baseSize">
-    <size>
-     <width>0</width>
-     <height>0</height>
-    </size>
-   </property>
-   <property name="styleSheet">
-    <string notr="true">* { padding: 0; margin: 0; }
-html, body, #fullheight {
-    min-height: 100% !important;
-    height: 100%;
-}
-#fullheight {
-    width: 250px;
-    background: blue;
-}
-svg {
-    width:100%;
-    height: 100%;
-}</string>
-   </property>
-  </widget>
-  <widget class="QWidget" name="">
-   <layout class="QHBoxLayout" name="horizontalLayout">
-    <item>
-     <layout class="QVBoxLayout" name="verticalLayout_3">
-      <item>
-       <widget class="QLabel" name="label">
-        <property name="text">
-         <string>Depth (Level)</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <layout class="QHBoxLayout" name="horizontalLayout_5">
-        <item>
-         <widget class="QSlider" name="depthslider">
-          <property name="minimum">
-           <number>-200</number>
-          </property>
-          <property name="maximum">
-           <number>200</number>
-          </property>
-          <property name="sliderPosition">
-           <number>-40</number>
-          </property>
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_2">
-          <item>
-           <widget class="QSpinBox" name="depthNumber">
-            <property name="minimum">
-             <number>-200</number>
-            </property>
-            <property name="maximum">
-             <number>200</number>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLabel" name="label_3">
-            <property name="text">
-             <string>m</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </item>
-       </layout>
-      </item>
-     </layout>
-    </item>
-    <item>
-     <layout class="QVBoxLayout" name="verticalLayout_2">
-      <item>
-       <widget class="QLabel" name="label_2">
-        <property name="text">
-         <string>Drill dist.</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <layout class="QHBoxLayout" name="horizontalLayout6">
-        <item>
-         <widget class="QSlider" name="drilldistance">
-          <property name="minimum">
-           <number>0</number>
-          </property>
-          <property name="maximum">
-           <number>1000</number>
-          </property>
-          <property name="sliderPosition">
-           <number>0</number>
-          </property>
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_8">
-          <item>
-           <widget class="QSpinBox" name="drillNumber">
-            <property name="minimum">
-             <number>0</number>
-            </property>
-            <property name="maximum">
-             <number>1000</number>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLabel" name="label_4">
-            <property name="text">
-             <string>m</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </item>
-       </layout>
-      </item>
-     </layout>
-    </item>
-   </layout>
-  </widget>
-  <widget class="QWidget" name="">
-   <layout class="QHBoxLayout" name="horizontalLayout_3">
-    <item>
-     <widget class="QPushButton" name="Refresh">
-      <property name="maximumSize">
-       <size>
-        <width>150</width>
-        <height>16777215</height>
-       </size>
-      </property>
-      <property name="baseSize">
-       <size>
-        <width>0</width>
-        <height>0</height>
-       </size>
-      </property>
-      <property name="text">
-       <string>Refresh</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QPushButton" name="Report">
-      <property name="text">
-       <string>Make Layout</string>
-      </property>
-     </widget>
-    </item>
-   </layout>
-  </widget>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="2">
+    <widget class="QComboBox" name="ModelComboBox">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>150</width>
+       <height>16777215</height>
+      </size>
+     </property>
+     <property name="baseSize">
+      <size>
+       <width>0</width>
+       <height>0</height>
+      </size>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="2">
+    <layout class="QHBoxLayout" name="horizontalLayout_3">
+     <item>
+      <widget class="QPushButton" name="Refresh">
+       <property name="maximumSize">
+        <size>
+         <width>150</width>
+         <height>16777215</height>
+        </size>
+       </property>
+       <property name="baseSize">
+        <size>
+         <width>0</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>Refresh</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="Report">
+       <property name="text">
+        <string>Make Layout</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
  </widget>
  <customwidgets>
   <customwidget>
