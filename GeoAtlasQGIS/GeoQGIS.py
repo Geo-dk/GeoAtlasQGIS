@@ -69,11 +69,11 @@ class GeoQGIS:
         self.plugin_dir = os.path.dirname(__file__)
         # initialize locale
         # Currently unused, but useful if we start translating.
-        locale = QSettings().value('locale/userLocale')[0:2]
+        # locale = QSettings().value('locale/userLocale')[0:2]
         locale_path = os.path.join(
             self.plugin_dir,
             'i18n',
-            'GeoQGIS_{}.qm'.format(locale))
+            'GeoQGIS_{}.qm'.format("en"))
 
         if os.path.exists(locale_path):
             self.translator = QTranslator()
@@ -102,7 +102,7 @@ class GeoQGIS:
         self.modelid = 0 
         self.apiKeyGetter = ApiKeyGetter(self.iface, self.settings)
         self.apiKey = self.apiKeyGetter.getApiKey()
-        self.virtualBoring = VirtualBoringTool(self.iface,self.apiKeyGetter)
+        self.virtualBoring = VirtualBoringTool(self.iface, self.apiKeyGetter)
         self.sliceTool = SliceTool(self.iface, self.apiKeyGetter)
         self.crosssectionTool = Crosssection(self.iface, self.apiKeyGetter, self.settings)
         self.report = ReportTool(self.iface, self.apiKeyGetter)
@@ -110,6 +110,7 @@ class GeoQGIS:
         # wms layers as the tokens only last for 22 hours.
         self.register_timer_for_token_updater()
         self.update_GAL_layers_with_tokens()
+
         
 
     # noinspection PyMethodMayBeStatic
@@ -184,7 +185,7 @@ class GeoQGIS:
             if callable(getattr(layer, "setDataSource", None)):
                 debugMsg("  Updated Token for layer: " + layer.name())
                 uri = uri.replace(token, self.apiKeyGetter.getApiKeyNoBearer())
-                layer.setDataSource(uri, layer.name(), 'wms',QgsDataProvider.ProviderOptions()) 
+                layer.setDataSource(uri, layer.name(), 'wms', QgsDataProvider.ProviderOptions()) 
 
 
 
@@ -226,7 +227,7 @@ class GeoQGIS:
     def aboutmessagebox(self):
         title = "About"
         message = "QGIS implementation of GeoAtlasLive\n"
-        message += "Version 1.0\n"
+        message += "Version 1.2\n"
         message += "Copyright (c) 2019 GEO\n"
         message += "data@geo.dk"
         QMessageBox.information(self.iface.mainWindow(), title, message)

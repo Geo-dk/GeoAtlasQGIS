@@ -51,6 +51,11 @@ class CrosssectionDialog(QtWidgets.QDialog, FORM_CLASS):
         #So if WebKitView gets deprecrated completely, som fix will have to found
         self.htmlFrame.setHtml(html)
 
+    def setLegend(self, html):
+        #Uses WebKitView as WebEngine has to be started before QGIS
+        #So if WebKitView gets deprecrated completely, som fix will have to found
+        self.legendFrame.setHtml(html)
+
     def getModelChoice(self):
         return self.ModelComboBox.currentText()
 
@@ -76,4 +81,7 @@ class CrosssectionDialog(QtWidgets.QDialog, FORM_CLASS):
 
     def getHtmlFrame(self):
         return self.htmlFrame
+    
+    def getLegend(self):
+        return self.legendFrame
 

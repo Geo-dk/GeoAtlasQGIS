@@ -58,6 +58,7 @@ class Crosssection():
         # If we already have UI, we shouldnt make a new one.
         if self.dlg is None:
             self.makeUI()       
+        self.chooseOrMakeAppropriateLayer()
         self.updateCrosssection()
 
     def createNewLineAndCrossSection(self):
@@ -261,6 +262,19 @@ class Crosssection():
         html += '</div></body></html>'
         return html
 
+    def createLegendframe(self, svg, settings, section, cssfile):
+        # The HTML helps make the SVG show more nicely by having the legend at the side
+        html = '<!DOCTYPE html> <html><head>'
+        html += '<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />'
+        html += '<title>QGIS</title> <style>'
+        f=open(os.path.dirname(os.path.realpath(__file__)) + "/" + cssfile, "r")
+        html += f.read()
+        f.close()
+        html += '</style><body><div class="flex-container">'
+        html += self.createLegend(section)
+        html += '</div></body></html>'
+        return html
+
     def createLegend(self, section):
         # Behavior should be the same as the websites version here. 
         html = '<ul class="signatur">'
@@ -339,6 +353,7 @@ class Crosssection():
         for frame in self.composition.multiFrames():
             if frame.totalSize().width() >= 0 and frame.totalSize().height() >= 0:
                 htmlframe = frame
+                legendframe = frame
                 break
         settings = CrosssectionSettings()
         settings.depth = self.dlg.getDepth()
@@ -349,6 +364,7 @@ class Crosssection():
         if section:
             svg = self.fixSvg(section['Svg'], settings)
             html = self.createHtmlframe(svg, settings, section, "\\styles\\printCSS.css")
+            legnd = self.createLegendframe(svg, settings, section, "\\styles\\printCSS.css")
             htmlframe.setHtml(html)
             htmlframe.refresh()
 

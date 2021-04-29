@@ -40,7 +40,7 @@ def transformToProjection(projection, coords, layer):
 def reduceTo2dList(largeList):
     #Reduces any list to a 2d list, through the zeroth element in each. 
     if not isinstance(largeList, list):
-        raise ValueError('List of Coordninates was not a list as expected')
+        raise ValueError('List of Coordinates was not a list as expected')
     if isinstance(largeList[0][0], list):
         return reduceTo2dList(largeList[0])
     else:
@@ -114,7 +114,6 @@ def getRotationOfLine(coords):
     return atan((coords[-1][1]-coords[0][1])/(coords[-1][0]-coords[0][0])) * 180 / pi
 
 def layerIsVector(layer):
-        if str(type(layer).__name__) == "QgsVectorLayer" and layer.geometryType() < 2:
-            return True
-        else:
-            return False
+    if layer.type() == QgsVectorLayer.VectorLayer and layer.geometryType() == QgsWkbTypes.LineGeometry:
+        return True
+    return False
