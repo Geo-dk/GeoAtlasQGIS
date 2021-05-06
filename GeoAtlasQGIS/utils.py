@@ -65,9 +65,17 @@ class GeoBoundingBox:
         def to_string(self):
             return (str(self.min_x) + ',' + str(self.min_y) + ',' + str(self.max_x) + ',' + str(self.max_y))
 
+class GeoPoint:
+        def __init__(self, x, y):
+                self.x = x
+                self.y = y
+
+        def to_string(self):
+            return (str(self.x) + ',' + str(self.y))
+
 SAVEDMODELS = None
 
-def getModelsFromCordList(coordinates, apikey):
+def getModelsFromCoordList(coordinates, apikey):
     # Later on using WFS models might be useful, as it allows for greater accuracy 
     global SAVEDMODELS
     if SAVEDMODELS is None:
@@ -84,12 +92,17 @@ def getModelsFromCordList(coordinates, apikey):
         if insidemodel:
             models.append(model)
     if len(models) == 0:
-        debugMsg("No models for this area: " + coordinates)
+        debugMsg(("No models for this area: ", coordinates))
     return models
     #If there is no models in the lists, then we couldnt find any.
 
 def get_models_for_bounding_box(bbox, apikey):
     url = "https://data.geo.dk/api/v2/geomodel?bbox=" + bbox.to_string()
+    message = requests.get(url , headers={'authorization': apikey})
+    return message.json()
+
+def get_models_for_point(point, apikey):
+    url = "https://data.geo.dk/api/v2/geomodel?" + point.to_string()
     message = requests.get(url , headers={'authorization': apikey})
     return message.json()
 

@@ -292,7 +292,7 @@ class Crosssection():
         self.dlg.setHtml(svg)
 
     def getAvailableModels(self, coordinates):
-        return getModelsFromCordList(coordinates, self.apiKeyGetter.getApiKey())
+        return getModelsFromCoordList(coordinates, self.apiKeyGetter.getApiKey())
 
     def boreHoleBuffer(self, settings):
         layer = self.getworkinglayer()

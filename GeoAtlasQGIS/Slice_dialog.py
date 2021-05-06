@@ -76,6 +76,7 @@ class SliceDialog(QtWidgets.QDialog, FORM_CLASS):
         index = self.ModelComboBox.findText(current)
         if index >= 0:
             self.ModelComboBox.setCurrentIndex(index)
+        
 
     def getDepth(self):
         return self.depthNumber.value()

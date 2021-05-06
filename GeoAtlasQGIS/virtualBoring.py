@@ -87,7 +87,7 @@ class VirtualBoringTool():
         pass
 
     def updateAvaibleModels(self, coords):
-        self.currentModels = getModelsFromCordList([coords], self.apiKeyGetter.getApiKey())
+        self.currentModels = getModelsFromCoordList([coords], self.apiKeyGetter.getApiKey())
         self.updateDisplayedModels()
         #If no models exist for this area, use the Terræn model.
         self.modelid = self.getCurrentModel()
