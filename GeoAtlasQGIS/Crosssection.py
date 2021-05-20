@@ -20,6 +20,7 @@ import math
 import processing
 from processing.core.Processing import Processing
 from qgis.analysis import QgsNativeAlgorithms
+import re
 Processing.initialize()
 QgsApplication.processingRegistry().addProvider(QgsNativeAlgorithms())
 
@@ -182,6 +183,10 @@ class Crosssection():
         # Result is a required parameter for tasks to work.
         self.show_ui()
         self.updateDisplayedModels()
+        try: # a bit hacky
+            if section[0].lower() == "error": self.iface.messageBar().pushMessage("Warning:", section[1], level=Qgis.Warning, duration=5)
+        except:
+            pass
         if section:
             self.svg = self.fixSvg(section['Svg'], self.settings)
             self.html = self.createHtmlframe(self.svg, self.settings, section, "\\styles\\defaultCSS.css")
@@ -189,7 +194,7 @@ class Crosssection():
 
     def performCrosssection(self, task, coords, settings):
         # Task is a required parameter for tasks to work and contains the current tasks
-        settings.modelid = self.updateAvaibleModels(coords)
+        settings.modelid = self.updateAvailableModels(coords)
         section = self.getCrosssectionFromUri(coords, settings)
         # Returned values in tasks gets send to reciever as parameters
         return section
@@ -206,7 +211,7 @@ class Crosssection():
             line = features[0]
             return line
     
-    def updateAvaibleModels(self, coords):
+    def updateAvailableModels(self, coords):
         self.currentModels = self.getAvailableModels(coords)  
         #If no models exist for this area, use the Terræn model.
         if self.currentModels:
@@ -215,8 +220,8 @@ class Crosssection():
                 self.modelid = next(item for item in self.currentModels if item["Name"] == self.dlg.getModelChoice())['ID']
             except StopIteration as e:
                 #If there is no model selected currently, then select the first one or zero of none exists.
-                debugMsg("No Models Could be found")
-                debugMsg(e)
+                # debugMsg("No Models Could be found")
+                # debugMsg(e)
                 if self.currentModels:
                     self.modelid = self.currentModels[0]['ID'] 
                 else:
@@ -228,15 +233,26 @@ class Crosssection():
             self.dlg.setModels([item['Name'] for item in self.currentModels if 'Name' in item])
 
     def getCrosssectionFromUri(self, coords, settings):
-            url = "https://data.geo.dk/api/v2/crosssection?path=" + str(coords).replace(" ", "") 
-            url += "&geomodelid=" + str(settings.modelid)
-            url += "&width=" + str(settings.width)
-            url += "&height=" + str(settings.height)
-            url += "&maxdepth=" + str(settings.depth)
-            url += "&linepointdistance=" + str(settings.linepoint)
-            if settings.drilldistance > 0:
-                url += "&MaxBoringDistance=" + str(settings.drilldistance)
-            return requests.get(url, headers={'authorization': self.apiKeyGetter.getApiKey()}).json()
+        url = "https://data.geo.dk/api/v2/crosssection?path=" + str(coords).replace(" ", "") 
+        url += "&geomodelid=" + str(settings.modelid)
+        url += "&width=" + str(settings.width)
+        url += "&height=" + str(settings.height)
+        url += "&maxdepth=" + str(settings.depth)
+        url += "&linepointdistance=" + str(settings.linepoint)
+        if settings.drilldistance > 0:
+            url += "&MaxBoringDistance=" + str(settings.drilldistance)
+        # when i am debugging making large / weird crosssections 
+        if os.getlogin() == 'NPA': url += "&APIStat=True"
+
+        req = requests.get(url, headers={'authorization': self.apiKeyGetter.getApiKey()})
+        if req.status_code == 400: # maybe change to any failure code.
+            reg = re.search('(?s)(?<=<h2>)(.+?)(?=</h2>)', req.text) # Get the error
+            error = re.sub('<[^>]*>', '', reg.group(1)).strip() #strip whitespace or italics/bold
+            debugMsg(error) # print to debug
+            return ("error", error)
+
+        json = req.json()
+        return json
     
     def fixSvg(self, svg, settings):
         # The returned SVG is missing parts to render currectly. 
