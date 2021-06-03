@@ -15,6 +15,7 @@ class VirtualBoringTool():
         self.workinglayer = None
         self.boring = None
         self.DEFAULTLAYERNAME = "GAL - Virtual Boring"
+        self.modelid = 0
 
     def display_point(self, pointToolCoordinates ): 
         # Gets the coordinates in and changes the users tool back.
@@ -22,7 +23,7 @@ class VirtualBoringTool():
         coords = self.transformToCorrectCRS(pointToolCoordinates)
         self.getBoring(coords)
     
-    def transformToCorrectCRS(self, coords, crs = 25832):
+    def transformToCorrectCRS(self, coords, crs = "EPSG:25832"):
         xform = QgsCoordinateTransform()
         xform.setSourceCrs(self.iface.mapCanvas().mapSettings().destinationCrs())
         xform.setDestinationCrs(QgsCoordinateReferenceSystem(crs))
@@ -47,8 +48,9 @@ class VirtualBoringTool():
         if self.workinglayer.dataProvider().featureCount() > 0:
             self.workinglayer.dataProvider().truncate()
         self.boring = self.addBoringSpot(self.x, self.y)
-        self.updateAvaibleModels(coords)
-        self.updateBoring()
+        self.updateAvailableModels(coords)
+        self.firstBoring()
+        self.updateDisplayedModels()
         self.workinglayer.triggerRepaint()
 
     def addBoringSpot(self, x, y):
@@ -59,12 +61,21 @@ class VirtualBoringTool():
 
     def updateBoring(self):
         self.iface.addDockWidget( Qt.RightDockWidgetArea, self.dock )
+        debugMsg("Updating the boring from dropdown")
+        # Use task for multithreading
+        self.sectionTask = QgsTask.fromFunction('Update Boring', self.makeBoring, self.x, self.y, self.setModel(), self.dlg.getDepth(), self.apiKeyGetter.getApiKey(), on_finished=self.boringcallback)
+        QgsApplication.taskManager().addTask(self.sectionTask)
+
+    def firstBoring(self):
+        self.iface.addDockWidget( Qt.RightDockWidgetArea, self.dock )
+        debugMsg("Making original boring")
         # Use task for multithreading
         self.sectionTask = QgsTask.fromFunction('Update Boring', self.makeBoring, self.x, self.y, self.getCurrentModel(), self.dlg.getDepth(), self.apiKeyGetter.getApiKey(), on_finished=self.boringcallback)
         QgsApplication.taskManager().addTask(self.sectionTask)
 
     def boringcallback(self, result, message):
         self.dlg.updateImage(message.content)
+        
 
     def makeLayer(self):
         self.workinglayer = QgsVectorLayer("Point?crs=epsg:25832", self.DEFAULTLAYERNAME, "memory")
@@ -73,7 +84,7 @@ class VirtualBoringTool():
         self.workinglayer.loadNamedStyle(self.dirpath + "\\styles\\dotstyle.qml")
 
     def makeBoring(self, task, x, y, modelid, depth, apikey):
-        return requests.get("https://data.geo.dk/api/v2/virtualboring?modelId= " + str(modelid) + "&type=bar&x=" + str(x) + "&y=" + str(y) + "&maxDepth=" + str(depth),
+        return requests.get("https://data.geo.dk/api/v3/virtualboring?geoareaid=1&modelId= " + str(modelid) + "&type=bar&x=" + str(x) + "&y=" + str(y) + "&maxDepth=" + str(depth),
                                headers={'authorization': apikey})
 
     def makeUi(self):
@@ -86,24 +97,43 @@ class VirtualBoringTool():
     def getUrlToBoring(self):
         pass
 
-    def updateAvaibleModels(self, coords):
-        self.currentModels = getModelsFromCoordList([coords], self.apiKeyGetter.getApiKey())
-        self.updateDisplayedModels()
+    def updateAvailableModels(self, coords):
+        #self.currentModels = getModelsFromCoordList([coords], self.apiKeyGetter.getApiKey())
+        self.currentModels = get_models_for_point(coords, self.apiKeyGetter.getApiKey())
         #If no models exist for this area, use the Terræn model.
-        self.modelid = self.getCurrentModel()
+        #self.modelid = self.getCurrentModel()
 
     def getCurrentModel(self):
+        
+        prevmodelid = self.modelid
+        #debugMsg("prev: " + str(prevmodelid))
         if self.currentModels:
-            try:
-                #Get the currently selected model in the combobox.
-                self.modelid = next(item for item in self.currentModels if item["Name"] == self.dlg.getModelChoice())['ID']
-            except StopIteration as e:
-                #If there is no model selected currently, then select the first one or zero of none exists.
-                debugMsg(e)
-                if self.currentModels:
-                    self.modelid = self.currentModels[0]['ID'] 
-                else:
-                    self.modelid = 0
+            # see if current selected is in currentmodels
+            for model in self.currentModels:
+                if model['ID'] == prevmodelid:
+                    #debugMsg("found it " + str(model['ID']))
+                    self.modelid = model['ID']
+                    return self.modelid
+            # pick the highest priority model otherwise
+            highestPriority = -100
+            for model in self.currentModels:
+                if model['Priority'] > highestPriority:
+                    highestPriority = model['Priority']
+                    self.modelid = model['ID']
+            #debugMsg(self.modelid)
+        self.updateDisplayedModels()
+        return self.modelid
+        
+    def setModel(self):
+        if self.currentModels:
+            self.modelid = next(item for item in self.currentModels if item["Name"] == self.dlg.getModelChoice())['ID'] 
+        else: 
+            highestPriority = -100
+            for model in self.currentModels:
+                if model['Priority'] > highestPriority:
+                    highestPriority = model['Priority']
+                    self.modelid = model['ID']
+        #debugMsg(self.modelid)
         return self.modelid
 
     def updateDisplayedModels(self):

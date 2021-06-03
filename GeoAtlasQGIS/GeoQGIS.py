@@ -273,7 +273,10 @@ class GeoQGIS:
 
     def addModelsToMap(self):
         #Get the models the user has avaiable.
-        models = requests.get("https://data.geo.dk/api/v2/geomodel", headers={'authorization': self.apiKeyGetter.getApiKey()}).json()
+        #debugMsg(self.apiKeyGetter.getApiKey())
+        r = requests.get("https://data.geo.dk/api/v3/geomodel?geoareaid=1", headers={'authorization': self.apiKeyGetter.getApiKey()})
+        #debugMsg(r)
+        models = r.json()
 
         #Build the string of the models.
         modelsstring = ""

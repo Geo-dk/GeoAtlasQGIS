@@ -233,7 +233,7 @@ class Crosssection():
             self.dlg.setModels([item['Name'] for item in self.currentModels if 'Name' in item])
 
     def getCrosssectionFromUri(self, coords, settings):
-        url = "https://data.geo.dk/api/v2/crosssection?path=" + str(coords).replace(" ", "") 
+        url = "https://data.geo.dk/api/v3/crosssection?geoareaid=1&path=" + str(coords).replace(" ", "") 
         url += "&geomodelid=" + str(settings.modelid)
         url += "&width=" + str(settings.width)
         url += "&height=" + str(settings.height)
@@ -262,7 +262,11 @@ class Crosssection():
         s+='" preserveAspectRatio="xMinYMin meet"'
         #Making the svg fit correctly by adding scaling style to it.
         svg = svg.replace('<svg',s,1)
+        # v3 fix. Maybe this issue is resolved later. If colors act weird, this is probrably why.
+        svg = svg.replace('signature-geounit', 'signatur-geoenhed')
+        svg = svg.replace('geounit', 'geoenhed')
         return svg
+
 
     def createHtmlframe(self, svg, settings, section, cssfile):
         # The HTML helps make the SVG show more nicely by having the legend at the side
@@ -294,11 +298,11 @@ class Crosssection():
     def createLegend(self, section):
         # Behavior should be the same as the websites version here. 
         html = '<ul class="signatur">'
-        for geoenhed in section['Model']['GeoEnheder']:
+        for geounit in section['Model']['GeoUnits']:
             li = '<li data><span class="signatur-geoenhed-'
-            li += str(geoenhed['Id']) +'">'
+            li += str(geounit['Id']) +'">'
             li += '</span><span class="signatur-title">'
-            li += str(geoenhed['Navn'])
+            li += str(geounit['Name'])
             li += '</span></li>'
             html += li
         html += '</ul>'
