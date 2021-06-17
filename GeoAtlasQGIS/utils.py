@@ -4,6 +4,9 @@ import requests
 from operator import itemgetter
 from math import atan, pi, sqrt
 from datetime import datetime
+import xml.etree.ElementTree as ET
+import tempfile
+from shapely import geometry
 
 def add_layer_to_group(layer, groupname='GAL'):
     i = QgsProject.instance()
@@ -101,12 +104,28 @@ def get_models_for_bounding_box(bbox, apikey):
     message = requests.get(url , headers={'authorization': apikey})
     return message.json()
 
-def get_models_for_point(point, apikey):
+def get_models_for_point(point, elemdict, apikey):
     url = "https://data.geo.dk/api/v3/geomodel?geoareaid=1&x=" + str(point[0]) + "&y=" + str(point[1])
     models = requests.get(url, headers={'authorization': apikey}).json()
-    for model in models: #make a boring for each to eliminate "empty" models
-        if requests.get(("https://data.geo.dk/api/v3/virtualboring?geoareaid=1&modelid=" + str(model['ID']) + "&x=" + str(point[0]) + "&y=" + str(point[1])), headers={'authorization': apikey}).status_code == 404:
-            models.remove(model)
+
+    for model in models[:]: #make a boring for each to eliminate "empty" models. Do on copy to avoid issues
+        elem = elemdict[str(model['ID'])]
+        for e in elem:
+            contained = False
+            l = []
+            v = e.split(';')
+            for elem in v:
+                x = elem.split(',')
+                p = (float(x[0]), float(x[1]))
+                l.append(p)
+            line = geometry.LineString(l)
+            geometryPoint = geometry.Point(float(point[0]), float(point[1]))
+            polygon = geometry.Polygon(line)
+            contained = polygon.contains(geometryPoint)
+            if contained:
+                break
+        if not contained: 
+            models.remove(model)       
     if len(models) == 0:
         debugMsg(("No models for this area: ", point))
     return models

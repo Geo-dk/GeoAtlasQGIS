@@ -7,7 +7,7 @@ from .ApiKeyGetter import *
 from .virtualBoring_dialog import *
 
 class VirtualBoringTool():
-    def __init__(self, iface, apiKeyGetter):
+    def __init__(self, iface, elemtree, apiKeyGetter):
         self.iface = iface
         self.apiKeyGetter = apiKeyGetter
         self.dlg = None
@@ -16,6 +16,7 @@ class VirtualBoringTool():
         self.boring = None
         self.DEFAULTLAYERNAME = "GAL - Virtual Boring"
         self.modelid = 0
+        self.elemdict = elemtree
 
     def display_point(self, pointToolCoordinates ): 
         # Gets the coordinates in and changes the users tool back.
@@ -99,7 +100,7 @@ class VirtualBoringTool():
 
     def updateAvailableModels(self, coords):
         #self.currentModels = getModelsFromCoordList([coords], self.apiKeyGetter.getApiKey())
-        self.currentModels = get_models_for_point(coords, self.apiKeyGetter.getApiKey())
+        self.currentModels = get_models_for_point(coords, self.elemdict, self.apiKeyGetter.getApiKey())
         #If no models exist for this area, use the Terræn model.
         #self.modelid = self.getCurrentModel()
 
