@@ -108,7 +108,7 @@ def get_models_for_point(point, elemdict, apikey):
     url = "https://data.geo.dk/api/v3/geomodel?geoareaid=1&x=" + str(point[0]) + "&y=" + str(point[1])
     models = requests.get(url, headers={'authorization': apikey}).json()
 
-    for model in models[:]: #make a boring for each to eliminate "empty" models. Do on copy to avoid issues
+    for model in models[:]: #Construct a polygon of each model, and see if the point is within this polygon
         elem = elemdict[str(model['ID'])]
         for e in elem:
             contained = False
@@ -124,8 +124,8 @@ def get_models_for_point(point, elemdict, apikey):
             contained = polygon.contains(geometryPoint)
             if contained:
                 break
-        if not contained: 
-            models.remove(model)       
+        if not contained:
+            models.remove(model)
     if len(models) == 0:
         debugMsg(("No models for this area: ", point))
     return models
@@ -154,3 +154,4 @@ def layerIsVector(layer):
     if layer.type() == QgsVectorLayer.VectorLayer and layer.geometryType() == QgsWkbTypes.LineGeometry:
         return True
     return False
+    

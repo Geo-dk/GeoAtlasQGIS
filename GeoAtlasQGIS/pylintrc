@@ -39,8 +39,8 @@ load-plugins=
 # no Warning level messages displayed, use"--disable=all --enable=classes
 # --disable=W"
 # see http://stackoverflow.com/questions/21487025/pylint-locally-defined-disables-still-give-warnings-how-to-suppress-them
-disable=locally-disabled,C0103
-
+disable=locally-disabled,C0103,line-too-long,missing-function-docstring,undefined-variable,no-name-in-module,import-error,unused-import,wildcard-import
+disable=missing-module-docstring
 
 [REPORTS]
 

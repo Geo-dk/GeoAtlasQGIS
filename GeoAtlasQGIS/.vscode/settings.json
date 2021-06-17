@@ -12,5 +12,15 @@
     "python.testing.pytestArgs": [
         "tests"
     ],
-    "python.linting.pylintEnabled": true
+    "python.linting.pylintEnabled": true,
+    "python.pythonPath": "C:\\OSGeo4W64\\apps\\Python37\\python.exe",
+    "python.linting.enabled": true,
+    "python.analysis.diagnosticSeverityOverrides": {
+        "reportUnboundVariable" : "none", 
+        "reportUndefinedVariable" : "none",
+        "reportMissingImports": "none",
+        "reportWildcardImportFromLibrary": "none",
+        "reportGeneralTypeIssues": "none"
+        
+    }
 }
