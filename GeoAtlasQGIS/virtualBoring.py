@@ -51,7 +51,6 @@ class VirtualBoringTool():
         self.boring = self.addBoringSpot(self.x, self.y)
         self.updateAvailableModels(coords)
         self.firstBoring()
-        self.updateDisplayedModels()
         self.workinglayer.triggerRepaint()
 
     def addBoringSpot(self, x, y):
@@ -62,21 +61,20 @@ class VirtualBoringTool():
 
     def updateBoring(self):
         self.iface.addDockWidget( Qt.RightDockWidgetArea, self.dock )
-        debugMsg("Updating the boring from dropdown")
+        debugMsg("Updating a boring from dropdown")
         # Use task for multithreading
         self.sectionTask = QgsTask.fromFunction('Update Boring', self.makeBoring, self.x, self.y, self.setModel(), self.dlg.getDepth(), self.apiKeyGetter.getApiKey(), on_finished=self.boringcallback)
         QgsApplication.taskManager().addTask(self.sectionTask)
 
     def firstBoring(self):
         self.iface.addDockWidget( Qt.RightDockWidgetArea, self.dock )
-        debugMsg("Making original boring")
+        debugMsg("Making a new boring")
         # Use task for multithreading
         self.sectionTask = QgsTask.fromFunction('Update Boring', self.makeBoring, self.x, self.y, self.getCurrentModel(), self.dlg.getDepth(), self.apiKeyGetter.getApiKey(), on_finished=self.boringcallback)
         QgsApplication.taskManager().addTask(self.sectionTask)
 
     def boringcallback(self, result, message):
         self.dlg.updateImage(message.content)
-        
 
     def makeLayer(self):
         self.workinglayer = QgsVectorLayer("Point?crs=epsg:25832", self.DEFAULTLAYERNAME, "memory")
@@ -99,31 +97,34 @@ class VirtualBoringTool():
         pass
 
     def updateAvailableModels(self, coords):
-        #self.currentModels = getModelsFromCoordList([coords], self.apiKeyGetter.getApiKey())
         self.currentModels = get_models_for_point(coords, self.elemdict, self.apiKeyGetter.getApiKey())
-        #If no models exist for this area, use the Terræn model.
-        #self.modelid = self.getCurrentModel()
+        #TODO: If no models exist for this area, use the Terræn model.
+        #TODO: Learn what terræn model is lol
 
     def getCurrentModel(self):
-        
-        prevmodelid = self.modelid
-        #debugMsg("prev: " + str(prevmodelid))
+        temp_model = None
+        getHighest = True
+        prevmodelid = self.modelid # Save the current one as previous
         if self.currentModels:
             # see if current selected is in currentmodels
             for model in self.currentModels:
                 if model['ID'] == prevmodelid:
                     #debugMsg("found it " + str(model['ID']))
-                    self.modelid = model['ID']
-                    return self.modelid
+                    temp_model = model
+                    getHighest = False # Already found the one we want
             # pick the highest priority model otherwise
-            highestPriority = -100
-            for model in self.currentModels:
-                if model['Priority'] > highestPriority:
-                    highestPriority = model['Priority']
-                    self.modelid = model['ID']
-            #debugMsg(self.modelid)
-        self.updateDisplayedModels()
-        return self.modelid
+            if getHighest:
+                highestPriority = -100
+                for model in self.currentModels:
+                    if model['Priority'] > highestPriority:
+                        highestPriority = model['Priority']
+                        temp_model = model
+        self.updateDisplayedModels() 
+        self.setDisplayedModel(temp_model) # Show the correct one in the list
+
+        if temp_model is not None: # should not be None ever but just in case
+            self.modelid = temp_model['ID']
+        return self.modelid # should be 0 and caught somewhere if not set above
         
     def setModel(self):
         if self.currentModels:
@@ -140,6 +141,11 @@ class VirtualBoringTool():
     def updateDisplayedModels(self):
         if self.currentModels:
             self.dlg.setModels([item['Name'] for item in self.currentModels if 'Name' in item])
+    
+    def setDisplayedModel(self, model):
+        models = [item['Name'] for item in self.currentModels if 'Name' in item]
+        index = models.index(model['Name'])
+        self.dlg.ModelComboBox.setCurrentIndex(index)
 
     def changeToBoringTool(self):
      # a reference to our map canvas

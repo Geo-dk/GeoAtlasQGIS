@@ -1,3 +1,4 @@
+from os import remove
 from qgis.core import *
 from PyQt5.QtCore import QTimer
 import requests
@@ -7,6 +8,7 @@ from datetime import datetime
 import xml.etree.ElementTree as ET
 import tempfile
 from shapely import geometry
+import time
 
 def add_layer_to_group(layer, groupname='GAL'):
     i = QgsProject.instance()
@@ -79,7 +81,7 @@ class GeoPoint:
 SAVEDMODELS = None
 
 def getModelsFromCoordList(coordinates, apikey):
-    # Later on using WFS models might be useful, as it allows for greater accuracy 
+    # Later on using WFS models might be useful, as it allows for greater accuracy but add high time cost
     global SAVEDMODELS
     if SAVEDMODELS is None:
         SAVEDMODELS = requests.get("https://data.geo.dk/api/v3/geomodel?geoareaid=1", headers={'authorization': apikey}).json()
@@ -88,12 +90,10 @@ def getModelsFromCoordList(coordinates, apikey):
     for model in SAVEDMODELS:
         bboxdict = model['BoundingBox']
         bbox = GeoBoundingBox(bboxdict["MinX"], bboxdict["MinY"], bboxdict["MaxX"], bboxdict["MaxY"])
-        insidemodel = False
         for coord in coordinates:
             if bbox.contains_point(coord[0], coord[1]):
-                insidemodel = True
-        if insidemodel:
-            models.append(model)
+                models.append(model)
+                break
     if len(models) == 0:
         debugMsg(("No models for this area: ", coordinates))
     return models
@@ -108,26 +108,29 @@ def get_models_for_point(point, elemdict, apikey):
     url = "https://data.geo.dk/api/v3/geomodel?geoareaid=1&x=" + str(point[0]) + "&y=" + str(point[1])
     models = requests.get(url, headers={'authorization': apikey}).json()
 
-    for model in models[:]: #Construct a polygon of each model, and see if the point is within this polygon
-        elem = elemdict[str(model['ID'])]
-        for e in elem:
+    #Construct a polygon of each model using the wfs models, and see if the point is within this polygon
+    for model in models[:]: 
+        elem = elemdict[str(model['ID'])] # Gets string coordinates that makes model
+        
+        for e in elem: 
             contained = False
-            l = []
-            v = e.split(';')
-            for elem in v:
+            l = [] 
+            v = e.split(';') 
+            for elem in v: # Convert string of "x,y;x,y;x,y" into coordinate pairs [[x, y], [x, y], [x, y]]
                 x = elem.split(',')
                 p = (float(x[0]), float(x[1]))
-                l.append(p)
-            line = geometry.LineString(l)
-            geometryPoint = geometry.Point(float(point[0]), float(point[1]))
-            polygon = geometry.Polygon(line)
+                l.append(p) # append line segments
+            line = geometry.LineString(l) # Make a line of the coordinate pairs
+            geometryPoint = geometry.Point(float(point[0]), float(point[1])) # Construct point from given coords
+            polygon = geometry.Polygon(line) #Construct a polygon of line
             contained = polygon.contains(geometryPoint)
             if contained:
                 break
-        if not contained:
+        if not contained: #unbound variable but works
             models.remove(model)
     if len(models) == 0:
         debugMsg(("No models for this area: ", point))
+
     return models
 
 def getBoundingBox(coordinates):
@@ -151,7 +154,8 @@ def getRotationOfLine(coords):
     return atan((coords[-1][1]-coords[0][1])/(coords[-1][0]-coords[0][0])) * 180 / pi
 
 def layerIsVector(layer):
-    if layer.type() == QgsVectorLayer.VectorLayer and layer.geometryType() == QgsWkbTypes.LineGeometry:
-        return True
+    if layer is not None: # Might give problems? Not sure. Dont see why but u never know
+        if layer.type() == QgsVectorLayer.VectorLayer and layer.geometryType() == QgsWkbTypes.LineGeometry:
+            return True
     return False
     

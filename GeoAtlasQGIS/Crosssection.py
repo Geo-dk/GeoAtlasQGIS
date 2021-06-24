@@ -39,7 +39,7 @@ class CrosssectionSettings():
 
 class Crosssection():
     
-    def __init__(self, iface, apiKeyGetter, usersettings):
+    def __init__(self, iface, elemtree, apiKeyGetter, usersettings):
         self.iface = iface
         self.apiKeyGetter = apiKeyGetter
         self.currentModels = None
@@ -49,6 +49,7 @@ class Crosssection():
         self.dlg = None
         self.dirpath = os.path.dirname(os.path.realpath(__file__))
         self.usersettings = usersettings
+        self.elemdict = elemtree
 
     def vectorLineIsSelected(self):
         if layerIsVector(self.iface.activeLayer()) and self.getSelectedLine(self.iface.activeLayer()):
@@ -212,7 +213,10 @@ class Crosssection():
             return line
     
     def updateAvailableModels(self, coords):
-        self.currentModels = self.getAvailableModels(coords)  
+        start = time.time()
+        self.currentModels = getModelsFromCoordList(coords, self.apiKeyGetter.getApiKey())
+        end = time.time()
+        print("cross " + str(end-start)) 
         #If no models exist for this area, use the Terræn model.
         if self.currentModels:
             try:
@@ -221,7 +225,6 @@ class Crosssection():
             except StopIteration as e:
                 #If there is no model selected currently, then select the first one or zero of none exists.
                 # debugMsg("No Models Could be found")
-                # debugMsg(e)
                 if self.currentModels:
                     self.modelid = self.currentModels[0]['ID'] 
                 else:

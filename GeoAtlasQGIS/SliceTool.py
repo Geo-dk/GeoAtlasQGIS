@@ -14,7 +14,7 @@ URLPART3 = "%3B" #-10 #LEVEL
 
 
 class SliceTool():
-    def __init__(self, iface, apiKeyGetter):
+    def __init__(self, iface, elemtree, apiKeyGetter):
         self.iface = iface
         self.apiKeyGetter = apiKeyGetter
         self.sliceDepth = 10
@@ -22,6 +22,7 @@ class SliceTool():
         self.model = None
         self.wmsLayer = None
         self.dlg = None
+        self.elemdict = elemtree
  
     def startSliceTool(self):
         self.wmsLayer = None # reset the selected layer
@@ -111,15 +112,14 @@ class SliceTool():
             name += ", DHM, Dybde: "
             name += str(abs(depth)) + "m"
         self.dlg.updatelayerName(name)
+        self.setDisplayedModel(self.model)
         return name
 
     def getModels(self):
         point = self.iface.mapCanvas().center() 
-        # Get model intersecting center of screen
-        self.currentModels = getModelsFromCoordList([[point.x(), point.y()]], self.apiKeyGetter.getApiKey())
+        # Get model intersecting center of screen     
+        self.currentModels = get_models_for_point([point.x(), point.y()], self.elemdict, self.apiKeyGetter.getApiKey())
         self.modelid = 0 
-        #If no models exist for this area, use the Terræn model.
-        # Through this has no usage for slice
         if self.currentModels:
             try:
                 #Get the currently selected model in the combobox.
@@ -156,3 +156,8 @@ class SliceTool():
             self.wmsLayer = self.iface.activeLayer()
             name = self.iface.activeLayer().name()
             self.dlg.updatelayerName(name)
+    
+    def setDisplayedModel(self, model):
+        models = [item['Name'] for item in self.currentModels if 'Name' in item]
+        index = models.index(model['Name'])
+        self.dlg.ModelComboBox.setCurrentIndex(index)

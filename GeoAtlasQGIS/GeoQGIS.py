@@ -107,8 +107,8 @@ class GeoQGIS:
         self.elemdict = None
         self.createElemDict()
         self.virtualBoring = VirtualBoringTool(self.iface, self.elemdict, self.apiKeyGetter)
-        self.sliceTool = SliceTool(self.iface, self.apiKeyGetter)
-        self.crosssectionTool = Crosssection(self.iface, self.apiKeyGetter, self.settings)
+        self.sliceTool = SliceTool(self.iface, self.elemdict, self.apiKeyGetter)
+        self.crosssectionTool = Crosssection(self.iface, self.elemdict, self.apiKeyGetter, self.settings)
         self.report = ReportTool(self.iface, self.apiKeyGetter)
         # Timer is used for regularly updating tokens and keeping access to 
         # wms layers as the tokens only last for 22 hours.
