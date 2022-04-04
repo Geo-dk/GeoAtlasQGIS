@@ -15,7 +15,8 @@ class ReportTool():
         self.apiKeyGetter = apiKeyGetter
 
     def testReport(self):
-        # Not sure if its this or the method in crosssection thats used. :)
+        print("using report class")
+        # Not sure if its this or the method in crosssection thats used. :) (HMD comment)
         dir_path = os.path.dirname(os.path.realpath(__file__)) + "/standardlayout.qpt"
         project = QgsProject.instance()
         self.composition = QgsPrintLayout(project)

@@ -173,7 +173,6 @@ class Crosssection():
         self.settings.depth = self.dlg.getDepth()
         self.settings.drilldistance = self.dlg.getDrillDistance()
         self.settings.linepoint = self.calculateLinePoint(self.line, self.settings)
-
         # Tasks are the only way of having working multithreading
         self.sectionTask = QgsTask.fromFunction('Update Crosssection', self.performCrosssection, self.coords, self.settings, on_finished=self.crosssectiontaskcallback)
         QgsApplication.taskManager().addTask(self.sectionTask)
@@ -216,7 +215,7 @@ class Crosssection():
         start = time.time()
         self.currentModels = getModelsFromCoordList(coords, self.apiKeyGetter.getApiKey())
         end = time.time()
-        print("cross " + str(end-start)) 
+        #print("cross " + str(end-start)) 
         #If no models exist for this area, use the Terræn model.
         if self.currentModels:
             try:
@@ -397,11 +396,11 @@ class Crosssection():
                 bbox = line.geometry().boundingBox()
                 coords = reduceTo2dList(line.__geo_interface__["geometry"]["coordinates"])
                 rotation = getRotationOfLine(coords)
-                item.zoomToExtent(bbox)
-                scaleFactor = getDistanceOfLine(coords)/ item.extent().width()
-                bbox.scale(scaleFactor) #Det her kan gøres bedre, lodrette og vandrette linjer virker.
                 bbox.scale(1.1)
                 item.zoomToExtent(bbox)
+                #scaleFactor = getDistanceOfLine(coords)/ item.extent().width()
+                #bbox.scale(scaleFactor) #Det her kan gøres bedre, lodrette og vandrette linjer virker.
+                #item.zoomToExtent(bbox)
                 item.setMapRotation(rotation)
                 
                 item.refresh() 

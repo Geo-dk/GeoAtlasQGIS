@@ -148,10 +148,24 @@ def getBoundingBox(coordinates):
 
 #Quick maths
 def getDistanceOfLine(coords):
-    return sqrt((coords[-1][1]-coords[0][1])**2+(coords[-1][0]-coords[0][0])**2)
+    distance = 0
+    try:
+        distance = sqrt((coords[-1][1]-coords[0][1])**2+(coords[-1][0]-coords[0][0])**2)
+    except:
+        debugMsg("error when calculating distance of line, defaulting to 0")
+    finally:
+        return distance
+
 
 def getRotationOfLine(coords):
-    return atan((coords[-1][1]-coords[0][1])/(coords[-1][0]-coords[0][0])) * 180 / pi
+    angle = 0
+    try:
+        angle = atan((coords[-1][1]-coords[0][1])/(coords[-1][0]-coords[0][0])) * 180 / pi
+    except:
+        debugMsg("error when calculating rotation of line, defaulting to 0") 
+    finally:
+        return angle
+
 
 def layerIsVector(layer):
     if layer is not None: # Might give problems? Not sure. Dont see why but u never know
