@@ -222,7 +222,7 @@ class GeoQGIS:
         msgBox = QMessageBox()
         msgBox.setWindowTitle( "Help" )
         msgBox.setTextFormat( Qt.RichText )
-        msgBox.setText( "<br>We Have two manuals to help you along<br>" 
+        msgBox.setText( "<br>We have two manuals to help you along<br>" 
             + "GeoAtlasLive Manual: <a href='{0}'>{0}</a><br><br>".format("https://wgn.geo.dk/geodata/GeoAtlasLive_Manual.pdf")
             + "Plugin Manual: <a href='{0}'>{0}</a><br><br>".format("https://wgn.geo.dk/geodata/GeoAtlasPlugin_Manual.pdf"))
 
@@ -232,8 +232,8 @@ class GeoQGIS:
     def aboutmessagebox(self):
         title = "About"
         message = "QGIS implementation of GeoAtlasLive\n"
-        message += "Version 1.2\n"
-        message += "Copyright (c) 2019 GEO\n"
+        message += "Version 1.3\n"
+        message += "Copyright (c) 2021 GEO\n"
         message += "data@geo.dk"
         QMessageBox.information(self.iface.mainWindow(), title, message)
 
