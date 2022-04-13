@@ -14,7 +14,7 @@ URLPART3 = "%3B" #-10 #LEVEL
 
 
 class SliceTool():
-    def __init__(self, iface, apiKeyGetter):
+    def __init__(self, iface, elemtree, apiKeyGetter):
         self.iface = iface
         self.apiKeyGetter = apiKeyGetter
         self.sliceDepth = 10
@@ -22,6 +22,7 @@ class SliceTool():
         self.model = None
         self.wmsLayer = None
         self.dlg = None
+        self.elemdict = elemtree
  
     def startSliceTool(self):
         self.wmsLayer = None # reset the selected layer
@@ -111,43 +112,52 @@ class SliceTool():
             name += ", DHM, Dybde: "
             name += str(abs(depth)) + "m"
         self.dlg.updatelayerName(name)
+        self.setDisplayedModel(self.model)
         return name
 
     def getModels(self):
-            bbox = self.getBboxFromScreen()
-            self.currentModels = get_models_for_bounding_box(bbox,self.apiKeyGetter.getApiKey())
-            self.modelid = 0 
-            #If no models exist for this area, use the Terræn model.
-            # Through this has no usage for slice
-            if self.currentModels:
-                try:
-                    #Get the currently selected model in the combobox.
-                    self.model = next(item for item in self.currentModels if item["Name"] == self.dlg.getModelChoice())
-                    
-                except StopIteration as e:
-                    #If there is no model selected currently, then select the first one.
-                    debugMsg(e)
-                    self.model = self.currentModels[0]
-                self.modelid = self.model['ID']
-                self.dlg.setModels([item['Name'] for item in self.currentModels if 'Name' in item])
+        point = self.iface.mapCanvas().center() 
+        # Get model intersecting center of screen     
+        self.currentModels = get_models_for_point([point.x(), point.y()], self.elemdict, self.apiKeyGetter.getApiKey())
+        self.modelid = 0 
+        if self.currentModels:
+            try:
+                #Get the currently selected model in the combobox.
+                self.model = next(item for item in self.currentModels if item["Name"] == self.dlg.getModelChoice())
+                
+            except StopIteration as e:
+                #If there is no model selected currently, then select the one with highest priority.
+                highestPriority = -100
+                for model in self.currentModels:
+                    if model['Priority'] > highestPriority:
+                        highestPriority = model['Priority']
+                        self.model = model
+            self.modelid = self.model['ID']
+            self.dlg.setModels([item['Name'] for item in self.currentModels if 'Name' in item])
 
     def getBboxFromScreen(self):
-            xform = QgsCoordinateTransform()
-            if self.iface.activeLayer() is None:
-                xform.setSourceCrs(self.iface.mapCanvas().mapSettings().destinationCrs())
-            else:
-                xform.setSourceCrs(self.iface.activeLayer().crs())
-            xform.setDestinationCrs(QgsCoordinateReferenceSystem(25832))
-            QTcord = xform.transformBoundingBox(self.iface.mapCanvas().extent())
+        xform = QgsCoordinateTransform()
+        if self.iface.activeLayer() is None:
+            xform.setSourceCrs(self.iface.mapCanvas().mapSettings().destinationCrs())
+        else:
+            xform.setSourceCrs(self.iface.activeLayer().crs())
+        xform.setDestinationCrs(QgsCoordinateReferenceSystem(25832))
+        QTcord = xform.transformBoundingBox(self.iface.mapCanvas().extent())
 
-            xMin = QTcord.xMinimum()
-            xMax = QTcord.xMaximum()
-            yMin = QTcord.yMinimum()
-            yMax = QTcord.yMaximum()
-            return GeoBoundingBox(xMin, yMin, xMax, yMax )
-    
+        xMin = QTcord.xMinimum()
+        xMax = QTcord.xMaximum()
+        yMin = QTcord.yMinimum()
+        yMax = QTcord.yMaximum()
+
+        return GeoBoundingBox(xMin, yMin, xMax, yMax )
+
     def changeSelectedlayer(self):
         if self.iface.activeLayer() and isinstance(self.iface.activeLayer(), type(self.wmsLayer)) and self.iface.activeLayer().dataProvider().name() == "wms":
             self.wmsLayer = self.iface.activeLayer()
             name = self.iface.activeLayer().name()
             self.dlg.updatelayerName(name)
+    
+    def setDisplayedModel(self, model):
+        models = [item['Name'] for item in self.currentModels if 'Name' in item]
+        index = models.index(model['Name'])
+        self.dlg.ModelComboBox.setCurrentIndex(index)

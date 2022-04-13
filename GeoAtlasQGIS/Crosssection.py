@@ -20,6 +20,7 @@ import math
 import processing
 from processing.core.Processing import Processing
 from qgis.analysis import QgsNativeAlgorithms
+import re
 Processing.initialize()
 QgsApplication.processingRegistry().addProvider(QgsNativeAlgorithms())
 
@@ -38,7 +39,7 @@ class CrosssectionSettings():
 
 class Crosssection():
     
-    def __init__(self, iface, apiKeyGetter, usersettings):
+    def __init__(self, iface, elemtree, apiKeyGetter, usersettings):
         self.iface = iface
         self.apiKeyGetter = apiKeyGetter
         self.currentModels = None
@@ -48,6 +49,7 @@ class Crosssection():
         self.dlg = None
         self.dirpath = os.path.dirname(os.path.realpath(__file__))
         self.usersettings = usersettings
+        self.elemdict = elemtree
 
     def vectorLineIsSelected(self):
         if layerIsVector(self.iface.activeLayer()) and self.getSelectedLine(self.iface.activeLayer()):
@@ -58,6 +60,7 @@ class Crosssection():
         # If we already have UI, we shouldnt make a new one.
         if self.dlg is None:
             self.makeUI()       
+        self.chooseOrMakeAppropriateLayer()
         self.updateCrosssection()
 
     def createNewLineAndCrossSection(self):
@@ -170,7 +173,6 @@ class Crosssection():
         self.settings.depth = self.dlg.getDepth()
         self.settings.drilldistance = self.dlg.getDrillDistance()
         self.settings.linepoint = self.calculateLinePoint(self.line, self.settings)
-
         # Tasks are the only way of having working multithreading
         self.sectionTask = QgsTask.fromFunction('Update Crosssection', self.performCrosssection, self.coords, self.settings, on_finished=self.crosssectiontaskcallback)
         QgsApplication.taskManager().addTask(self.sectionTask)
@@ -181,6 +183,10 @@ class Crosssection():
         # Result is a required parameter for tasks to work.
         self.show_ui()
         self.updateDisplayedModels()
+        try: # a bit hacky
+            if section[0].lower() == "error": self.iface.messageBar().pushMessage("Warning:", section[1], level=Qgis.Warning, duration=5)
+        except:
+            pass
         if section:
             self.svg = self.fixSvg(section['Svg'], self.settings)
             self.html = self.createHtmlframe(self.svg, self.settings, section, "\\styles\\defaultCSS.css")
@@ -188,7 +194,7 @@ class Crosssection():
 
     def performCrosssection(self, task, coords, settings):
         # Task is a required parameter for tasks to work and contains the current tasks
-        settings.modelid = self.updateAvaibleModels(coords)
+        settings.modelid = self.updateAvailableModels(coords)
         section = self.getCrosssectionFromUri(coords, settings)
         # Returned values in tasks gets send to reciever as parameters
         return section
@@ -205,8 +211,11 @@ class Crosssection():
             line = features[0]
             return line
     
-    def updateAvaibleModels(self, coords):
-        self.currentModels = self.getAvailableModels(coords)  
+    def updateAvailableModels(self, coords):
+        start = time.time()
+        self.currentModels = getModelsFromCoordList(coords, self.apiKeyGetter.getApiKey())
+        end = time.time()
+        #print("cross " + str(end-start)) 
         #If no models exist for this area, use the Terræn model.
         if self.currentModels:
             try:
@@ -214,8 +223,7 @@ class Crosssection():
                 self.modelid = next(item for item in self.currentModels if item["Name"] == self.dlg.getModelChoice())['ID']
             except StopIteration as e:
                 #If there is no model selected currently, then select the first one or zero of none exists.
-                debugMsg("No Models Could be found")
-                debugMsg(e)
+                # debugMsg("No Models Could be found")
                 if self.currentModels:
                     self.modelid = self.currentModels[0]['ID'] 
                 else:
@@ -227,15 +235,26 @@ class Crosssection():
             self.dlg.setModels([item['Name'] for item in self.currentModels if 'Name' in item])
 
     def getCrosssectionFromUri(self, coords, settings):
-            url = "https://data.geo.dk/api/v2/crosssection?path=" + str(coords).replace(" ", "") 
-            url += "&geomodelid=" + str(settings.modelid)
-            url += "&width=" + str(settings.width)
-            url += "&height=" + str(settings.height)
-            url += "&maxdepth=" + str(settings.depth)
-            url += "&linepointdistance=" + str(settings.linepoint)
-            if settings.drilldistance > 0:
-                url += "&MaxBoringDistance=" + str(settings.drilldistance)
-            return requests.get(url, headers={'authorization': self.apiKeyGetter.getApiKey()}).json()
+        url = "https://data.geo.dk/api/v3/crosssection?geoareaid=1&path=" + str(coords).replace(" ", "") 
+        url += "&geomodelid=" + str(settings.modelid)
+        url += "&width=" + str(settings.width)
+        url += "&height=" + str(settings.height)
+        url += "&maxdepth=" + str(settings.depth)
+        url += "&linepointdistance=" + str(settings.linepoint)
+        if settings.drilldistance > 0:
+            url += "&MaxBoringDistance=" + str(settings.drilldistance)
+        # when i am debugging making large / weird crosssections 
+        if os.getlogin() == 'NPA': url += "&APIStat=True"
+
+        req = requests.get(url, headers={'authorization': self.apiKeyGetter.getApiKey()})
+        if req.status_code == 400: # maybe change to any failure code.
+            reg = re.search('(?s)(?<=<h2>)(.+?)(?=</h2>)', req.text) # Get the error
+            error = re.sub('<[^>]*>', '', reg.group(1)).strip() #strip whitespace or italics/bold
+            debugMsg(error) # print to debug
+            return ("error", error)
+
+        json = req.json()
+        return json
     
     def fixSvg(self, svg, settings):
         # The returned SVG is missing parts to render currectly. 
@@ -245,7 +264,11 @@ class Crosssection():
         s+='" preserveAspectRatio="xMinYMin meet"'
         #Making the svg fit correctly by adding scaling style to it.
         svg = svg.replace('<svg',s,1)
+        # v3 fix. Maybe this issue is resolved later. If colors act weird, this is probrably why.
+        svg = svg.replace('signature-geounit', 'signatur-geoenhed')
+        svg = svg.replace('geounit', 'geoenhed')
         return svg
+
 
     def createHtmlframe(self, svg, settings, section, cssfile):
         # The HTML helps make the SVG show more nicely by having the legend at the side
@@ -261,14 +284,27 @@ class Crosssection():
         html += '</div></body></html>'
         return html
 
+    def createLegendframe(self, svg, settings, section, cssfile):
+        # The HTML helps make the SVG show more nicely by having the legend at the side
+        html = '<!DOCTYPE html> <html><head>'
+        html += '<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />'
+        html += '<title>QGIS</title> <style>'
+        f=open(os.path.dirname(os.path.realpath(__file__)) + "/" + cssfile, "r")
+        html += f.read()
+        f.close()
+        html += '</style><body><div class="flex-container">'
+        html += self.createLegend(section)
+        html += '</div></body></html>'
+        return html
+
     def createLegend(self, section):
         # Behavior should be the same as the websites version here. 
         html = '<ul class="signatur">'
-        for geoenhed in section['Model']['GeoEnheder']:
+        for geounit in section['Model']['GeoUnits']:
             li = '<li data><span class="signatur-geoenhed-'
-            li += str(geoenhed['Id']) +'">'
+            li += str(geounit['Id']) +'">'
             li += '</span><span class="signatur-title">'
-            li += str(geoenhed['Navn'])
+            li += str(geounit['Name'])
             li += '</span></li>'
             html += li
         html += '</ul>'
@@ -278,7 +314,7 @@ class Crosssection():
         self.dlg.setHtml(svg)
 
     def getAvailableModels(self, coordinates):
-        return getModelsFromCordList(coordinates, self.apiKeyGetter.getApiKey())
+        return getModelsFromCoordList(coordinates, self.apiKeyGetter.getApiKey())
 
     def boreHoleBuffer(self, settings):
         layer = self.getworkinglayer()
@@ -339,6 +375,7 @@ class Crosssection():
         for frame in self.composition.multiFrames():
             if frame.totalSize().width() >= 0 and frame.totalSize().height() >= 0:
                 htmlframe = frame
+                legendframe = frame
                 break
         settings = CrosssectionSettings()
         settings.depth = self.dlg.getDepth()
@@ -349,6 +386,7 @@ class Crosssection():
         if section:
             svg = self.fixSvg(section['Svg'], settings)
             html = self.createHtmlframe(svg, settings, section, "\\styles\\printCSS.css")
+            legnd = self.createLegendframe(svg, settings, section, "\\styles\\printCSS.css")
             htmlframe.setHtml(html)
             htmlframe.refresh()
 
@@ -358,11 +396,11 @@ class Crosssection():
                 bbox = line.geometry().boundingBox()
                 coords = reduceTo2dList(line.__geo_interface__["geometry"]["coordinates"])
                 rotation = getRotationOfLine(coords)
-                item.zoomToExtent(bbox)
-                scaleFactor = getDistanceOfLine(coords)/ item.extent().width()
-                bbox.scale(scaleFactor) #Det her kan gøres bedre, lodrette og vandrette linjer virker.
                 bbox.scale(1.1)
                 item.zoomToExtent(bbox)
+                #scaleFactor = getDistanceOfLine(coords)/ item.extent().width()
+                #bbox.scale(scaleFactor) #Det her kan gøres bedre, lodrette og vandrette linjer virker.
+                #item.zoomToExtent(bbox)
                 item.setMapRotation(rotation)
                 
                 item.refresh() 

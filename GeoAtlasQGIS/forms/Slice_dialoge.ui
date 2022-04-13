@@ -159,12 +159,12 @@
             <item>
              <layout class="QHBoxLayout" name="horizontalLayout_2">
               <item>
-               <widget class="QSpinBox" name="depthNumber">
+               <widget class="QDoubleSpinBox" name="depthNumber">
                 <property name="minimum">
-                 <number>-200</number>
+                 <double>-200.000000000000000</double>
                 </property>
                 <property name="maximum">
-                 <number>200</number>
+                 <double>200.000000000000000</double>
                 </property>
                </widget>
               </item>

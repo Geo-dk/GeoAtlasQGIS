@@ -69,11 +69,11 @@ class GeoQGIS:
         self.plugin_dir = os.path.dirname(__file__)
         # initialize locale
         # Currently unused, but useful if we start translating.
-        locale = QSettings().value('locale/userLocale')[0:2]
+        # locale = QSettings().value('locale/userLocale')[0:2]
         locale_path = os.path.join(
             self.plugin_dir,
             'i18n',
-            'GeoQGIS_{}.qm'.format(locale))
+            'GeoQGIS_{}.qm'.format("en"))
 
         if os.path.exists(locale_path):
             self.translator = QTranslator()
@@ -95,21 +95,30 @@ class GeoQGIS:
         self.actions = []
         self.menu = self.tr(u'&GeoQGIS')
         self.currentModels = None
+        
         # Check if plugin was started the first time in current QGIS session
         # Must be set in initGui() to survive plugin reloads
+        for i in range(10):
+            debugMsg("")
+        debugMsg("Loaded plugin")
         self.first_start = None
         self.svgWidget = None
         self.modelid = 0 
         self.apiKeyGetter = ApiKeyGetter(self.iface, self.settings)
         self.apiKey = self.apiKeyGetter.getApiKey()
-        self.virtualBoring = VirtualBoringTool(self.iface,self.apiKeyGetter)
-        self.sliceTool = SliceTool(self.iface, self.apiKeyGetter)
-        self.crosssectionTool = Crosssection(self.iface, self.apiKeyGetter, self.settings)
+        self.addModelsToMap(createonlyfile=True)
+        self.elemdict = None
+        self.createElemDict()
+        self.virtualBoring = VirtualBoringTool(self.iface, self.elemdict, self.apiKeyGetter)
+        self.sliceTool = SliceTool(self.iface, self.elemdict, self.apiKeyGetter)
+        self.crosssectionTool = Crosssection(self.iface, self.elemdict, self.apiKeyGetter, self.settings)
         self.report = ReportTool(self.iface, self.apiKeyGetter)
         # Timer is used for regularly updating tokens and keeping access to 
         # wms layers as the tokens only last for 22 hours.
         self.register_timer_for_token_updater()
         self.update_GAL_layers_with_tokens()
+        
+
         
 
     # noinspection PyMethodMayBeStatic
@@ -184,7 +193,7 @@ class GeoQGIS:
             if callable(getattr(layer, "setDataSource", None)):
                 debugMsg("  Updated Token for layer: " + layer.name())
                 uri = uri.replace(token, self.apiKeyGetter.getApiKeyNoBearer())
-                layer.setDataSource(uri, layer.name(), 'wms',QgsDataProvider.ProviderOptions()) 
+                layer.setDataSource(uri, layer.name(), 'wms', QgsDataProvider.ProviderOptions()) 
 
 
 
@@ -216,7 +225,7 @@ class GeoQGIS:
         msgBox = QMessageBox()
         msgBox.setWindowTitle( "Help" )
         msgBox.setTextFormat( Qt.RichText )
-        msgBox.setText( "<br>We Have two manuals to help you along<br>" 
+        msgBox.setText( "<br>We have two manuals to help you along<br>" 
             + "GeoAtlasLive Manual: <a href='{0}'>{0}</a><br><br>".format("https://wgn.geo.dk/geodata/GeoAtlasLive_Manual.pdf")
             + "Plugin Manual: <a href='{0}'>{0}</a><br><br>".format("https://wgn.geo.dk/geodata/GeoAtlasPlugin_Manual.pdf"))
 
@@ -226,8 +235,8 @@ class GeoQGIS:
     def aboutmessagebox(self):
         title = "About"
         message = "QGIS implementation of GeoAtlasLive\n"
-        message += "Version 1.0\n"
-        message += "Copyright (c) 2019 GEO\n"
+        message += "Version 1.3\n"
+        message += "Copyright (c) 2022 GEO\n"
         message += "data@geo.dk"
         QMessageBox.information(self.iface.mainWindow(), title, message)
 
@@ -244,8 +253,10 @@ class GeoQGIS:
             self.menu.deleteLater()
 
     def addBoreHoles(self):
+        debugMsg("Adding boreholes")
         # Add boreholes with labels as a wms to current project.
         uri = self.getBoreHoleUri()
+        debugMsg(uri)
         wmsLayer = QgsRasterLayer(uri,"GAL - Boreholes","wms")
         wmsLayer.dataProvider().setDataSourceUri(uri)
         QgsProject.instance().addMapLayer(wmsLayer, False)
@@ -270,21 +281,29 @@ class GeoQGIS:
         uri = str(quri.encodedUri())[2:-1]
         return uri
 
-    def addModelsToMap(self):
+
+
+    def addModelsToMap(self, createonlyfile = False):
+        debugMsg("Adding models to map")
         #Get the models the user has avaiable.
-        models = requests.get("https://data.geo.dk/api/v2/geomodel", headers={'authorization': self.apiKeyGetter.getApiKey()}).json()
+        #debugMsg(self.apiKeyGetter.getApiKey())
+        r = requests.get("https://data.geo.dk/api/v3/geomodel?geoareaid=1", headers={'authorization': self.apiKeyGetter.getApiKey()})
+        #debugMsg(r)
+        models = r.json()
 
         #Build the string of the models.
         modelsstring = ""
         for model in models:
             modelsstring += str(model['ID']) + ","
         #-1 is used on the website
-        modelsstring += "-1"
+        modelsstring += "-1" #dupes are fine
         # TODO: find a way of not using a directory. In memory should be possible
         #should be crossplatform method of saving to tempdir.
+        #debugMsg(modelsstring)
         tmppath = str(tempfile.gettempdir()) + "\\GeoAtlas\\"
         url = "https://data.geo.dk/map/GEO-Services/wfs?service=WFS&version=1.0&REQUEST=GetFeature&typeName=GEO-Services:geomodel_area&CQL_FILTER=GeoModelId%20in%20(" + modelsstring + ")"
         url += "&token=" + str(self.apiKeyGetter.getApiKeyNoBearer())
+        #debugMsg(url)
         wfs = requests.get(url)
         if not os.path.isdir(tmppath):
             os.mkdir(tmppath)
@@ -293,13 +312,56 @@ class GeoQGIS:
         fil.write(wfs.content)
         wfspath = os.path.realpath(fil.name)
         fil.close()
-        vlayer = QgsVectorLayer(wfspath,"GAL - Models", "ogr")
-        
-        if vlayer.isValid():
+        if not createonlyfile:
+            vlayer = QgsVectorLayer(wfspath,"GAL - Models", "ogr")
             
-            #Set style with: vlayer.renderer().symbol().symbolLayers()[0].
-            #Documented here: https://qgis.org/api/classQgsSimpleFillSymbolLayer.html
-            #Remove fill and only have outline.
-            vlayer.renderer().symbol().symbolLayers()[0].setBrushStyle(0)
-            QgsProject.instance().addMapLayer(vlayer, False)
-            add_layer_to_group(vlayer)
+            if vlayer.isValid():
+                
+                #Set style with: vlayer.renderer().symbol().symbolLayers()[0].
+                #Documented here: https://qgis.org/api/classQgsSimpleFillSymbolLayer.html
+                #Remove fill and only have outline.
+                vlayer.renderer().symbol().symbolLayers()[0].setBrushStyle(0)
+                QgsProject.instance().addMapLayer(vlayer, False)
+                add_layer_to_group(vlayer)
+
+    def createElemDict(self):
+
+        tmppath = str(tempfile.gettempdir()) + "\\GeoAtlas\\"
+        tree = ET.parse(tmppath + "models.wfs")
+
+        tempList = []
+        ids = []
+        coords = []
+        ETdict = {}
+
+        for child in tree.getroot():
+            for c in child.iter():
+                tempId = c.find('{www.geo.dk/Services/1.0.0}GeoModelId')
+                if tempId is not None:
+                    ids.append(tempId.text)
+                p = c.find('{http://www.opengis.net/gml}MultiPolygon')
+                if p:
+                    tempList.append(p)
+                    break
+                p = c.find('{http://www.opengis.net/gml}Polygon')
+                tempList.append(p)
+
+        for y in tempList:
+            if y is not None:
+                if y.tag == '{http://www.opengis.net/gml}MultiPolygon':
+                    l = []
+                    for x in y.iter('{http://www.opengis.net/gml}coordinates'):
+                        l.append(x.text)
+                    coords.append(l)
+                elif y.tag == '{http://www.opengis.net/gml}Polygon':
+                    for p in y.iter('{http://www.opengis.net/gml}coordinates'):
+                        coords.append([p.text])
+                        break
+
+        for i in range(len(ids)):
+            l = []
+            for y in coords[i]:
+                l.append(y.replace(" ", ";"))
+            ETdict[ids[i]] = l
+        
+        self.elemdict = ETdict
