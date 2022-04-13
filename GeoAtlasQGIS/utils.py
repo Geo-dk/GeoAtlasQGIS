@@ -110,24 +110,28 @@ def get_models_for_point(point, elemdict, apikey):
 
     #Construct a polygon of each model using the wfs models, and see if the point is within this polygon
     for model in models[:]: 
-        elem = elemdict[str(model['ID'])] # Gets string coordinates that makes model
-        
-        for e in elem: 
-            contained = False
-            l = [] 
-            v = e.split(';') 
-            for elem in v: # Convert string of "x,y;x,y;x,y" into coordinate pairs [[x, y], [x, y], [x, y]]
-                x = elem.split(',')
-                p = (float(x[0]), float(x[1]))
-                l.append(p) # append line segments
-            line = geometry.LineString(l) # Make a line of the coordinate pairs
-            geometryPoint = geometry.Point(float(point[0]), float(point[1])) # Construct point from given coords
-            polygon = geometry.Polygon(line) #Construct a polygon of line
-            contained = polygon.contains(geometryPoint)
-            if contained:
-                break
-        if not contained: #unbound variable but works
-            models.remove(model)
+        try:
+            elem = elemdict[str(model['ID'])] # Gets string coordinates that makes model
+            
+            for e in elem: 
+                contained = False
+                l = [] 
+                v = e.split(';') 
+                for elem in v: # Convert string of "x,y;x,y;x,y" into coordinate pairs [[x, y], [x, y], [x, y]]
+                    x = elem.split(',')
+                    p = (float(x[0]), float(x[1]))
+                    l.append(p) # append line segments
+                line = geometry.LineString(l) # Make a line of the coordinate pairs
+                geometryPoint = geometry.Point(float(point[0]), float(point[1])) # Construct point from given coords
+                polygon = geometry.Polygon(line) #Construct a polygon of line
+                contained = polygon.contains(geometryPoint)
+                if contained:
+                    break
+            if not contained: #unbound variable but works
+                models.remove(model)
+        except e:
+            debugMsg(e)
+            continue
     if len(models) == 0:
         debugMsg(("No models for this area: ", point))
 

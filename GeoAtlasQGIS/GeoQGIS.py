@@ -98,6 +98,9 @@ class GeoQGIS:
         
         # Check if plugin was started the first time in current QGIS session
         # Must be set in initGui() to survive plugin reloads
+        for i in range(10):
+            debugMsg("")
+        debugMsg("Loaded plugin")
         self.first_start = None
         self.svgWidget = None
         self.modelid = 0 
@@ -233,7 +236,7 @@ class GeoQGIS:
         title = "About"
         message = "QGIS implementation of GeoAtlasLive\n"
         message += "Version 1.3\n"
-        message += "Copyright (c) 2021 GEO\n"
+        message += "Copyright (c) 2022 GEO\n"
         message += "data@geo.dk"
         QMessageBox.information(self.iface.mainWindow(), title, message)
 
@@ -250,8 +253,10 @@ class GeoQGIS:
             self.menu.deleteLater()
 
     def addBoreHoles(self):
+        debugMsg("Adding boreholes")
         # Add boreholes with labels as a wms to current project.
         uri = self.getBoreHoleUri()
+        debugMsg(uri)
         wmsLayer = QgsRasterLayer(uri,"GAL - Boreholes","wms")
         wmsLayer.dataProvider().setDataSourceUri(uri)
         QgsProject.instance().addMapLayer(wmsLayer, False)
@@ -279,6 +284,7 @@ class GeoQGIS:
 
 
     def addModelsToMap(self, createonlyfile = False):
+        debugMsg("Adding models to map")
         #Get the models the user has avaiable.
         #debugMsg(self.apiKeyGetter.getApiKey())
         r = requests.get("https://data.geo.dk/api/v3/geomodel?geoareaid=1", headers={'authorization': self.apiKeyGetter.getApiKey()})
@@ -290,12 +296,14 @@ class GeoQGIS:
         for model in models:
             modelsstring += str(model['ID']) + ","
         #-1 is used on the website
-        modelsstring += "-1"
+        modelsstring += "-1" #dupes are fine
         # TODO: find a way of not using a directory. In memory should be possible
         #should be crossplatform method of saving to tempdir.
+        #debugMsg(modelsstring)
         tmppath = str(tempfile.gettempdir()) + "\\GeoAtlas\\"
         url = "https://data.geo.dk/map/GEO-Services/wfs?service=WFS&version=1.0&REQUEST=GetFeature&typeName=GEO-Services:geomodel_area&CQL_FILTER=GeoModelId%20in%20(" + modelsstring + ")"
         url += "&token=" + str(self.apiKeyGetter.getApiKeyNoBearer())
+        #debugMsg(url)
         wfs = requests.get(url)
         if not os.path.isdir(tmppath):
             os.mkdir(tmppath)
