@@ -110,11 +110,11 @@ def get_models_for_point(point, elemdict, apikey):
     url = "https://data.geo.dk/api/v3/geomodel?geoareaid=1&x=" + str(point[0]) + "&y=" + str(point[1])
     models = requests.get(url, headers={'authorization': apikey}).json()
     #Construct a polygon of each model by their outer coordinates, and see if the point is within this polygon
-    for model in models.copy():
+    for model in models.copy(): # work on copy, or else python funny moment when removing while iterating
         try:
             elem = elemdict[model['ID']] # Gets string coordinates that makes model
             contained = False
-            for e in elem: 
+            for e in elem: # Check every part of the model - many are split into multiple polygons 
                 geometryPoint = geometry.Point(float(point[0]), float(point[1])) # Construct point from given central coords
                 line = geometry.LineString(e) # Make a line of the coordinate pairs
                 polygon = geometry.Polygon(line) #Construct a polygon of line
