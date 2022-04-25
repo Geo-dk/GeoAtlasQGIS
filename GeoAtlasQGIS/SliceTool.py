@@ -98,7 +98,7 @@ class SliceTool():
             url += "depth:" + str(abs(depth))
         url += "&token=" + self.apiKeyGetter.getApiKeyNoBearer()
         quri.setParam("url", url)
-        uri = str(quri.encodedUri())[2:-1] #Removes "" around the string i think
+        uri = str(quri.encodedUri())[2:-1] #Removes "" around the string 
         return uri
 
     def updateLayerName(self, sliceType, depth):
@@ -118,6 +118,7 @@ class SliceTool():
     def getModels(self):
         point = self.iface.mapCanvas().center() 
         # Get model intersecting center of screen     
+        for i in range(5): debugMsg('')
         self.currentModels = get_models_for_point([point.x(), point.y()], self.elemdict, self.apiKeyGetter.getApiKey())
         self.modelid = 0 
         if self.currentModels:

@@ -212,10 +212,7 @@ class Crosssection():
             return line
     
     def updateAvailableModels(self, coords):
-        start = time.time()
         self.currentModels = getModelsFromCoordList(coords, self.apiKeyGetter.getApiKey())
-        end = time.time()
-        #print("cross " + str(end-start)) 
         #If no models exist for this area, use the Terræn model.
         if self.currentModels:
             try:

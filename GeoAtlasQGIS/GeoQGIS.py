@@ -21,6 +21,7 @@
  *                                                                         *
  ***************************************************************************/
 """
+from venv import create
 import requests
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
@@ -49,6 +50,7 @@ from .resources import *
 from .Crosssection import *
 from .report import *
 import threading
+import json
 
 
 class GeoQGIS:
@@ -256,7 +258,7 @@ class GeoQGIS:
         debugMsg("Adding boreholes")
         # Add boreholes with labels as a wms to current project.
         uri = self.getBoreHoleUri()
-        debugMsg(uri)
+        #debugMsg(uri)
         wmsLayer = QgsRasterLayer(uri,"GAL - Boreholes","wms")
         wmsLayer.dataProvider().setDataSourceUri(uri)
         QgsProject.instance().addMapLayer(wmsLayer, False)
@@ -284,36 +286,20 @@ class GeoQGIS:
 
 
     def addModelsToMap(self, createonlyfile = False):
-        debugMsg("Adding models to map")
-        #Get the models the user has avaiable.
-        #debugMsg(self.apiKeyGetter.getApiKey())
-        r = requests.get("https://data.geo.dk/api/v3/geomodel?geoareaid=1", headers={'authorization': self.apiKeyGetter.getApiKey()})
-        #debugMsg(r)
-        models = r.json()
-
-        #Build the string of the models.
-        modelsstring = ""
-        for model in models:
-            modelsstring += str(model['ID']) + ","
-        #-1 is used on the website
-        modelsstring += "-1" #dupes are fine
-        # TODO: find a way of not using a directory. In memory should be possible
-        #should be crossplatform method of saving to tempdir.
-        #debugMsg(modelsstring)
+        if createonlyfile: debugMsg("Creating models.json file")
+        else: debugMsg("Adding models to map")
+        r = requests.get("https://data.geo.dk/api/v3/geomodel?geoareaid=1&format=geojson", headers={'authorization': self.apiKeyGetter.getApiKey()})
+        json = r.content.decode('utf-8').replace('\\"', '"')[1:-1]
+        
         tmppath = str(tempfile.gettempdir()) + "\\GeoAtlas\\"
-        url = "https://data.geo.dk/map/GEO-Services/wfs?service=WFS&version=1.0&REQUEST=GetFeature&typeName=GEO-Services:geomodel_area&CQL_FILTER=GeoModelId%20in%20(" + modelsstring + ")"
-        url += "&token=" + str(self.apiKeyGetter.getApiKeyNoBearer())
-        #debugMsg(url)
-        wfs = requests.get(url)
-        if not os.path.isdir(tmppath):
-            os.mkdir(tmppath)
-        #Save it to file, because qgsvectorlayer only works with files.
-        fil = open(tmppath + "models.wfs", "wb")
-        fil.write(wfs.content)
-        wfspath = os.path.realpath(fil.name)
-        fil.close()
+        file = open(tmppath + "models.json", "w")
+        file.write(json)
+        jsonpath = os.path.realpath(file.name)
+        file.close()
+
         if not createonlyfile:
-            vlayer = QgsVectorLayer(wfspath,"GAL - Models", "ogr")
+            vlayer = QgsVectorLayer(jsonpath,"GAL - Models", "ogr")
+            vlayer.setCrs(QgsCoordinateReferenceSystem("EPSG:25832")) # needs to be done to make sure its not displayed in some other default CRS
             
             if vlayer.isValid():
                 
@@ -327,41 +313,16 @@ class GeoQGIS:
     def createElemDict(self):
 
         tmppath = str(tempfile.gettempdir()) + "\\GeoAtlas\\"
-        tree = ET.parse(tmppath + "models.wfs")
-
-        tempList = []
-        ids = []
-        coords = []
+        fh = open(tmppath + 'models.json', encoding='utf-8')
+        tree = json.load(fh)
         ETdict = {}
 
-        for child in tree.getroot():
-            for c in child.iter():
-                tempId = c.find('{www.geo.dk/Services/1.0.0}GeoModelId')
-                if tempId is not None:
-                    ids.append(tempId.text)
-                p = c.find('{http://www.opengis.net/gml}MultiPolygon')
-                if p:
-                    tempList.append(p)
-                    break
-                p = c.find('{http://www.opengis.net/gml}Polygon')
-                tempList.append(p)
-
-        for y in tempList:
-            if y is not None:
-                if y.tag == '{http://www.opengis.net/gml}MultiPolygon':
-                    l = []
-                    for x in y.iter('{http://www.opengis.net/gml}coordinates'):
-                        l.append(x.text)
-                    coords.append(l)
-                elif y.tag == '{http://www.opengis.net/gml}Polygon':
-                    for p in y.iter('{http://www.opengis.net/gml}coordinates'):
-                        coords.append([p.text])
-                        break
-
-        for i in range(len(ids)):
-            l = []
-            for y in coords[i]:
-                l.append(y.replace(" ", ";"))
-            ETdict[ids[i]] = l
+        for child in tree["features"]:
+            id = child['properties']['Id']
+            type = child['geometry']['type']
+            coordlist = child['geometry']['coordinates']
+            if type == 'MultiPolygon':
+                coordlist = [item for sublist in coordlist for item in sublist] #flatten one level
+            ETdict[id] = coordlist
         
         self.elemdict = ETdict
