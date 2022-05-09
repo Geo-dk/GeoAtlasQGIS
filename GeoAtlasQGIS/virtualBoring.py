@@ -27,7 +27,7 @@ class VirtualBoringTool():
     def transformToCorrectCRS(self, coords, crs = "EPSG:25832"):
         xform = QgsCoordinateTransform()
         xform.setSourceCrs(self.iface.mapCanvas().mapSettings().destinationCrs())
-        xform.setDestinationCrs(QgsCoordinateReferenceSystem(crs))
+        xform.setDestinationCrs(QgsCoordinateReferenceSystem.fromEpsgId(crs))
         x = coords.x()
         y = coords.y()
         return [xform.transform(x, y).x(), xform.transform(x,y).y()]

@@ -125,7 +125,7 @@ class Crosssection():
             self.line = self.getSelectedLine(self.getworkinglayer())
             if self.line and hasattr(self.line, '__geo_interface__'):
                 line = self.line.__geo_interface__
-                if (self.line.__geo_interface__["geometry"]["type"] is 'LineString' or self.line.__geo_interface__["geometry"]["type"] is 'MultiLineString'):
+                if (self.line.__geo_interface__["geometry"]["type"] == 'LineString' or self.line.__geo_interface__["geometry"]["type"] == 'MultiLineString'):
                     #Get the coordinates from selected features.
                     self.crossectionFromLine(self.line)
                 else:
@@ -212,10 +212,7 @@ class Crosssection():
             return line
     
     def updateAvailableModels(self, coords):
-        start = time.time()
         self.currentModels = getModelsFromCoordList(coords, self.apiKeyGetter.getApiKey())
-        end = time.time()
-        #print("cross " + str(end-start)) 
         #If no models exist for this area, use the Terræn model.
         if self.currentModels:
             try:
@@ -245,6 +242,7 @@ class Crosssection():
             url += "&MaxBoringDistance=" + str(settings.drilldistance)
         # when i am debugging making large / weird crosssections 
         if os.getlogin() == 'NPA': url += "&APIStat=True"
+        print(url)
 
         req = requests.get(url, headers={'authorization': self.apiKeyGetter.getApiKey()})
         if req.status_code == 400: # maybe change to any failure code.
@@ -347,7 +345,7 @@ class Crosssection():
     def testReport(self):
         # Here there be dragons. 
         # TODO: Refactor this whole functions out into a seperate class.
-        if self.usersettings.getlayout() is not '' and os.path.exists(self.usersettings.getlayout()):
+        if self.usersettings.getlayout() != '' and os.path.exists(self.usersettings.getlayout()):
             dir_path = self.usersettings.getlayout()
         else:
             dir_path = self.dirpath + "/standardlayout.qpt"
