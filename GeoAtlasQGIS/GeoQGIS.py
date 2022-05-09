@@ -292,7 +292,10 @@ class GeoQGIS:
         r = requests.get("https://data.geo.dk/api/v3/geomodel?geoareaid=1&format=geojson", headers={'authorization': self.apiKeyGetter.getApiKey()})
         json = r.content.decode('utf-8').replace('\\"', '"')[1:-1]
         
-        tmppath = str(tempfile.gettempdir()) + "\\GeoAtlas\\"
+        tmppath = str(tempfile.gettempdir()) + os.sep + "GeoAtlas" + os.sep
+        if not os.path.exists(tmppath):
+            os.makedirs(tmppath)
+
         file = open(tmppath + "models.json", "w")
         file.write(json)
         jsonpath = os.path.realpath(file.name)
@@ -313,7 +316,10 @@ class GeoQGIS:
 
     def createElemDict(self):
 
-        tmppath = str(tempfile.gettempdir()) + "\\GeoAtlas\\"
+        tmppath = str(tempfile.gettempdir()) + os.sep + "GeoAtlas" + os.sep
+        if not os.path.exists(tmppath):
+            os.makedirs(tmppath)
+        
         fh = open(tmppath + 'models.json', encoding='utf-8')
         tree = json.load(fh)
         ETdict = {}
