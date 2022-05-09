@@ -281,7 +281,7 @@ class GeoQGIS:
         url += "&token=" + str(self.apiKeyGetter.getApiKeyNoBearer())
         quri.setParam("url", url)
         uri = str(quri.encodedUri())[2:-1]
-        debugMsg("borehole uri: " + uri)
+        debugMsg("Borehole uri: " + urllib.parse.unquote(uri))
         return uri
 
 
@@ -333,3 +333,4 @@ class GeoQGIS:
             ETdict[id] = coordlist
         
         self.elemdict = ETdict
+        fh.close()

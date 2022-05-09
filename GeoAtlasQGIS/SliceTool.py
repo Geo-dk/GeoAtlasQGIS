@@ -1,3 +1,4 @@
+import urllib.parse
 from .Slice_dialog import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
@@ -41,6 +42,7 @@ class SliceTool():
         self.getModels()
         uri = self.build_uri(self.dlg.getSliceType(), self.dlg.getDepth(), self.modelid)
         # Create the temporary layer we can work on and get crs from
+        debugMsg(uri)
         self.wmsLayer = QgsRasterLayer(uri,self.updateLayerName(self.dlg.getSliceType(), self.dlg.getDepth()),"wms")
         QgsProject.instance().addMapLayer(self.wmsLayer, False)
         add_layer_to_group(self.wmsLayer)
@@ -99,7 +101,7 @@ class SliceTool():
         url += "&token=" + self.apiKeyGetter.getApiKeyNoBearer()
         quri.setParam("url", url)
         uri = str(quri.encodedUri())[2:-1] #Removes "" around the string 
-        debugMsg("slice uri:" + uri)
+        debugMsg("Slice uri: " + urllib.parse.unquote(uri))
         return uri
 
     def updateLayerName(self, sliceType, depth):
