@@ -4,4 +4,4 @@ You need a login to use the plugin, to get one contact data@geo.dk
 
 
 # Credit
-Uses qgissetingmanager https://github.com/opengisch/qgissettingmanager
+Uses qgissettingmanager https://github.com/opengisch/qgissettingmanager

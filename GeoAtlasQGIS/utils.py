@@ -1,3 +1,4 @@
+from distutils import debug
 from os import remove
 from qgis.core import *
 from PyQt5.QtCore import QTimer
@@ -9,6 +10,7 @@ import xml.etree.ElementTree as ET
 import tempfile
 from shapely import geometry
 import time
+import traceback
 
 def add_layer_to_group(layer, groupname='GAL'):
     i = QgsProject.instance()
@@ -107,30 +109,22 @@ def get_models_for_bounding_box(bbox, apikey):
 def get_models_for_point(point, elemdict, apikey):
     url = "https://data.geo.dk/api/v3/geomodel?geoareaid=1&x=" + str(point[0]) + "&y=" + str(point[1])
     models = requests.get(url, headers={'authorization': apikey}).json()
-
-    #Construct a polygon of each model using the wfs models, and see if the point is within this polygon
-    for model in models[:]: 
+    #Construct a polygon of each model by their outer coordinates, and see if the point is within this polygon
+    for model in models.copy(): # work on copy, or else python funny moment when removing while iterating
         try:
-            elem = elemdict[str(model['ID'])] # Gets string coordinates that makes model
-            
-            for e in elem: 
-                contained = False
-                l = [] 
-                v = e.split(';') 
-                for elem in v: # Convert string of "x,y;x,y;x,y" into coordinate pairs [[x, y], [x, y], [x, y]]
-                    x = elem.split(',')
-                    p = (float(x[0]), float(x[1]))
-                    l.append(p) # append line segments
-                line = geometry.LineString(l) # Make a line of the coordinate pairs
-                geometryPoint = geometry.Point(float(point[0]), float(point[1])) # Construct point from given coords
+            elem = elemdict[model['ID']] # Gets string coordinates that makes model
+            contained = False
+            for e in elem: # Check every part of the model - many are split into multiple polygons 
+                geometryPoint = geometry.Point(float(point[0]), float(point[1])) # Construct point from given central coords
+                line = geometry.LineString(e) # Make a line of the coordinate pairs
                 polygon = geometry.Polygon(line) #Construct a polygon of line
-                contained = polygon.contains(geometryPoint)
-                if contained:
+                if polygon.contains(geometryPoint):
+                    contained = True
                     break
-            if not contained: #unbound variable but works
+            if not contained:
                 models.remove(model)
-        except e:
-            debugMsg(e)
+        except:
+            debugMsg(traceback.format_exc())
             continue
     if len(models) == 0:
         debugMsg(("No models for this area: ", point))

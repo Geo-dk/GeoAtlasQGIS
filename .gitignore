@@ -41,3 +41,6 @@ uitests/out/**
 !build/
 geoqgis/tests/
 geoqgis/.vscode/
+GeoAtlasQGIS/.vscode/launch.json
+GeoAtlasQGIS/.vscode/settings.json
+GeoAtlasQGIS.zip
