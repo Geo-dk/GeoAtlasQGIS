@@ -242,6 +242,7 @@ class Crosssection():
             url += "&MaxBoringDistance=" + str(settings.drilldistance)
         # when i am debugging making large / weird crosssections 
         if os.getlogin() == 'NPA': url += "&APIStat=True"
+        print(url)
 
         req = requests.get(url, headers={'authorization': self.apiKeyGetter.getApiKey()})
         if req.status_code == 400: # maybe change to any failure code.

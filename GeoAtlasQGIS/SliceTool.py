@@ -8,7 +8,7 @@ from qgis.core import *
 
  
 MAPTYPE = "IgnoreGetFeatureInfoUrl=1&IgnoreGetMapUrl=1&contextualWMSLegend=0&crs=EPSG:25832&dpiMode=7&featureCount=10&format=image/png&layers=" #slice-kote-524 #TYPE_MODELID
-URLPART1 = "https://data.geo.dk/map/slice-tools?VERSION%3D1.3.0%26TRANSPARENT%3DTRUE%26LAYERS%3D" #slice_dhm #TYPE
+URLPART1 = "https://data.geo.dk/mapv2/slice-tools?VERSION%3D1.3.0%26TRANSPARENT%3DTRUE%26LAYERS%3D" #slice_dhm #TYPE
 URLPART2 = "%26viewparams%3Dmodel%3A" #30 #MODELID
 URLPART3 = "%3B" #-10 #LEVEL
 
@@ -99,6 +99,7 @@ class SliceTool():
         url += "&token=" + self.apiKeyGetter.getApiKeyNoBearer()
         quri.setParam("url", url)
         uri = str(quri.encodedUri())[2:-1] #Removes "" around the string 
+        debugMsg("slice uri:" + uri)
         return uri
 
     def updateLayerName(self, sliceType, depth):
@@ -117,8 +118,7 @@ class SliceTool():
 
     def getModels(self):
         point = self.iface.mapCanvas().center() 
-        # Get model intersecting center of screen     
-        for i in range(5): debugMsg('')
+        # Get model intersecting center of screen
         self.currentModels = get_models_for_point([point.x(), point.y()], self.elemdict, self.apiKeyGetter.getApiKey())
         self.modelid = 0 
         if self.currentModels:
