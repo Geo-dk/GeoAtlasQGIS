@@ -92,9 +92,9 @@ class SliceTool():
         url = URLPART1 + slice_type 
         url += URLPART2 + str(model)
         url += URLPART3
-        if slice_type is "slice_kote":
+        if slice_type == "slice_kote":
             url += "level:" + str(depth)
-        if slice_type is "slice_dhm":
+        if slice_type == "slice_dhm":
             url += "depth:" + str(abs(depth))
         url += "&token=" + self.apiKeyGetter.getApiKeyNoBearer()
         quri.setParam("url", url)
@@ -106,10 +106,10 @@ class SliceTool():
         name = "GAL - "
         if self.model:
             name += self.model['Name']
-        if sliceType is "slice_kote":
+        if sliceType == "slice_kote":
             name += ", Kote, Niveau: "
             name += str(depth) + "m"
-        if sliceType is "slice_dhm":
+        if sliceType == "slice_dhm":
             name += ", DHM, Dybde: "
             name += str(abs(depth)) + "m"
         self.dlg.updatelayerName(name)
@@ -142,7 +142,7 @@ class SliceTool():
             xform.setSourceCrs(self.iface.mapCanvas().mapSettings().destinationCrs())
         else:
             xform.setSourceCrs(self.iface.activeLayer().crs())
-        xform.setDestinationCrs(QgsCoordinateReferenceSystem(25832))
+        xform.setDestinationCrs(QgsCoordinateReferenceSystem.fromEpsgId(25832))
         QTcord = xform.transformBoundingBox(self.iface.mapCanvas().extent())
 
         xMin = QTcord.xMinimum()

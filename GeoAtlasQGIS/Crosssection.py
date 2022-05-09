@@ -125,7 +125,7 @@ class Crosssection():
             self.line = self.getSelectedLine(self.getworkinglayer())
             if self.line and hasattr(self.line, '__geo_interface__'):
                 line = self.line.__geo_interface__
-                if (self.line.__geo_interface__["geometry"]["type"] is 'LineString' or self.line.__geo_interface__["geometry"]["type"] is 'MultiLineString'):
+                if (self.line.__geo_interface__["geometry"]["type"] == 'LineString' or self.line.__geo_interface__["geometry"]["type"] == 'MultiLineString'):
                     #Get the coordinates from selected features.
                     self.crossectionFromLine(self.line)
                 else:
@@ -345,7 +345,7 @@ class Crosssection():
     def testReport(self):
         # Here there be dragons. 
         # TODO: Refactor this whole functions out into a seperate class.
-        if self.usersettings.getlayout() is not '' and os.path.exists(self.usersettings.getlayout()):
+        if self.usersettings.getlayout() != '' and os.path.exists(self.usersettings.getlayout()):
             dir_path = self.usersettings.getlayout()
         else:
             dir_path = self.dirpath + "/standardlayout.qpt"
