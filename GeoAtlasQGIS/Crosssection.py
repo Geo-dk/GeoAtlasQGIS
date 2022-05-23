@@ -162,6 +162,8 @@ class Crosssection():
         self.addFeatureAndSectionIt()
 
     def crossectionFromLine(self, line):
+        if self.apiKeyGetter.getApiKey() is None:
+            return
         #Get the coordinates from selected features.
         coords = reduceTo2dList(line.__geo_interface__["geometry"]["coordinates"])
         self.coords = transformToProjection(25832, coords, self.getworkinglayer())
