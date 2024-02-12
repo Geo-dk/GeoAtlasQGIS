@@ -108,9 +108,10 @@ class GeoQGIS:
         self.modelid = 0 
         self.apiKeyGetter = ApiKeyGetter(self.iface, self.settings)
         self.apiKey = self.apiKeyGetter.getApiKey()
-        self.addModelsToMap(createonlyfile=True)
         self.elemdict = None
-        self.createElemDict()
+        if self.apiKey is not None:
+            self.addModelsToMap(createonlyfile=True)
+            self.createElemDict()
         self.virtualBoring = VirtualBoringTool(self.iface, self.elemdict, self.apiKeyGetter)
         self.sliceTool = SliceTool(self.iface, self.elemdict, self.apiKeyGetter)
         self.crosssectionTool = Crosssection(self.iface, self.elemdict, self.apiKeyGetter, self.settings)
@@ -173,8 +174,12 @@ class GeoQGIS:
         self.addActionsToActionBar()
         # add toolbar button and menu item
 
+
     def update_GAL_layers_with_tokens(self):
         debugMsg("Updating Tokens.")
+        self.apiKey = self.apiKeyGetter.getApiKey() # update key
+        self.ensureElemDict()
+        
         token_regex = r'(&|%26)?token([=:]|%3A|%3D)(?P<Token>[\d\w\.=+-_\/]*)'
         #Find all layers with tokens in them, which are updatable and created by us.
         for layer in self.iface.mapCanvas().layers():
@@ -255,6 +260,11 @@ class GeoQGIS:
             self.menu.deleteLater()
 
     def addBoreHoles(self):
+        if self.apiKeyGetter.getApiKey() is None:
+            return
+
+        self.ensureElemDict()
+
         debugMsg("Adding boreholes")
         # Add boreholes with labels as a wms to current project.
         uri = self.getBoreHoleUri()
@@ -285,7 +295,6 @@ class GeoQGIS:
         return uri
 
 
-
     def addModelsToMap(self, createonlyfile = False):
         if createonlyfile: debugMsg("Creating models.json file")
         else: debugMsg("Adding models to map")
@@ -313,6 +322,8 @@ class GeoQGIS:
                 vlayer.renderer().symbol().symbolLayers()[0].setBrushStyle(0)
                 QgsProject.instance().addMapLayer(vlayer, False)
                 add_layer_to_group(vlayer)
+        if self.elemdict is None:
+            self.createElemDict()
 
     def createElemDict(self):
 
@@ -334,3 +345,16 @@ class GeoQGIS:
         
         self.elemdict = ETdict
         fh.close()
+
+
+    def ensureElemDict(self):
+        if self.apiKeyGetter.getApiKey() is None:
+            return
+
+        model_path = str(tempfile.gettempdir()) + os.sep + "GeoAtlas" + os.sep + 'models.json'
+        if not os.path.exists(model_path) or os.path.getsize(model_path) < 5000:
+            #update models if doesn't exist or under 5kb
+            self.addModelsToMap(createonlyfile=True)
+        if self.elemdict is None and os.path.getsize(model_path) > 5000:
+            # create if doesn't exist and model.json is larger than 5kb
+            self.createElemDict()

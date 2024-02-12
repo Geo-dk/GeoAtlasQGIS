@@ -38,6 +38,8 @@ class SliceTool():
             self.make_ui()
       
         
+        if self.apiKeyGetter.getApiKey() is None:
+            return
 
         self.getModels()
         uri = self.build_uri(self.dlg.getSliceType(), self.dlg.getDepth(), self.modelid)
@@ -118,24 +120,25 @@ class SliceTool():
         return name
 
     def getModels(self):
-        point = self.iface.mapCanvas().center() 
-        # Get model intersecting center of screen
-        self.currentModels = get_models_for_point([point.x(), point.y()], self.elemdict, self.apiKeyGetter.getApiKey())
-        self.modelid = 0 
-        if self.currentModels:
-            try:
-                #Get the currently selected model in the combobox.
-                self.model = next(item for item in self.currentModels if item["Name"] == self.dlg.getModelChoice())
-                
-            except StopIteration as e:
-                #If there is no model selected currently, then select the one with highest priority.
-                highestPriority = -100
-                for model in self.currentModels:
-                    if model['Priority'] > highestPriority:
-                        highestPriority = model['Priority']
-                        self.model = model
-            self.modelid = self.model['ID']
-            self.dlg.setModels([item['Name'] for item in self.currentModels if 'Name' in item])
+        if self.apiKeyGetter.getApiKey() is not None:
+            point = self.iface.mapCanvas().center() 
+            # Get model intersecting center of screen
+            self.currentModels = get_models_for_point([point.x(), point.y()], self.elemdict, self.apiKeyGetter.getApiKey())
+            self.modelid = 0 
+            if self.currentModels:
+                try:
+                    #Get the currently selected model in the combobox.
+                    self.model = next(item for item in self.currentModels if item["Name"] == self.dlg.getModelChoice())
+                    
+                except StopIteration as e:
+                    #If there is no model selected currently, then select the one with highest priority.
+                    highestPriority = -100
+                    for model in self.currentModels:
+                        if model['Priority'] > highestPriority:
+                            highestPriority = model['Priority']
+                            self.model = model
+                self.modelid = self.model['ID']
+                self.dlg.setModels([item['Name'] for item in self.currentModels if 'Name' in item])
 
     def getBboxFromScreen(self):
         xform = QgsCoordinateTransform()
@@ -160,6 +163,8 @@ class SliceTool():
             self.dlg.updatelayerName(name)
     
     def setDisplayedModel(self, model):
+        if model is None:
+            return
         models = [item['Name'] for item in self.currentModels if 'Name' in item]
         index = models.index(model['Name'])
         self.dlg.ModelComboBox.setCurrentIndex(index)

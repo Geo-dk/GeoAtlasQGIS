@@ -24,7 +24,7 @@ class VirtualBoringTool():
         coords = self.transformToCorrectCRS(pointToolCoordinates)
         self.getBoring(coords)
     
-    def transformToCorrectCRS(self, coords, crs = "EPSG:25832"):
+    def transformToCorrectCRS(self, coords, crs = 25832):
         xform = QgsCoordinateTransform()
         xform.setSourceCrs(self.iface.mapCanvas().mapSettings().destinationCrs())
         xform.setDestinationCrs(QgsCoordinateReferenceSystem.fromEpsgId(crs))
@@ -33,6 +33,9 @@ class VirtualBoringTool():
         return [xform.transform(x, y).x(), xform.transform(x,y).y()]
 
     def getBoring(self, coords):
+        if self.apiKeyGetter.getApiKey() is None:
+            return
+
         if self.dlg is None:
             self.makeUi()
         layers = QgsProject.instance().mapLayersByName(self.DEFAULTLAYERNAME)
