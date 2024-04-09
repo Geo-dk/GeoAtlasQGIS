@@ -107,7 +107,7 @@ class Crosssection():
         # The featureid (fid) comes from the feature being added.
         self.getworkinglayer().selectByIds([fid])
         self.iface.actionSelect().trigger()
-        self.getworkinglayer().commitChanges()
+        #self.getworkinglayer().commitChanges()
         # Save the changes and update the crosssection view
         self.removeFeatureConnect()
         self.updateCrosssection()
