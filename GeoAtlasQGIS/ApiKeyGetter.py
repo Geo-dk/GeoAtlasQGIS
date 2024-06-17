@@ -39,13 +39,15 @@ class ApiKeyGetter():
                 s = "https://data.geo.dk/token?username=" + urllib.parse.quote(self.username)
                 s += "&password=" + urllib.parse.quote(self.password)
                 s += "&role=" + urllib.parse.quote(self.role)
+                print(s)
                 r = requests.get(s)
                 if r.text:
                     keyNoQuote = r.text.replace('\"','')
                     tempkey = keyNoQuote.split('.')[1]
                     while len(tempkey) % 4 != 0:
                         tempkey += '='
-                    js = json.loads(str(base64.urlsafe_b64decode(tempkey))[2:-1])
+                    decoded = base64.urlsafe_b64decode(tempkey).decode('utf-8')
+                    js = json.loads(decoded)
                     if js['GAL.GeoModels'] == '':
                         self.iface.messageBar().pushMessage("Error", "No models for specified Role. Is the role correct in settings?", level=Qgis.Warning, duration=10)
                         return None

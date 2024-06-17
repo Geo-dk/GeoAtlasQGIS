@@ -1,0 +1,5 @@
+processing==0.52
+requests==2.31.0
+shapely==2.0.2
+PyQt5==5.15.10
+nose2==0.15.1

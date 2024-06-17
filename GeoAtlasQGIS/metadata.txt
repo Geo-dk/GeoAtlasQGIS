@@ -10,7 +10,7 @@
 name=GeoAtlasQGIS 
 qgisMinimumVersion=3.32
 description=GeoAtlas Live, now in QGIS
-version=1.3.4
+version=1.3.5
 author=Geo
 email=data@geo.dk
 
@@ -23,7 +23,7 @@ repository=https://github.com/Geo-dk/GeoAtlasQGIS
 # Recommended items:
 
 # Uncomment the following line and add your changelog:
-changelog= small fixes :)
+changelog= Fixed utf-8 decoding error when loading token
 
 # Tags are comma separated with spaces allowed
 tags=python
