@@ -40,9 +40,17 @@ class ConfigDialog(WIDGET, BASE, SettingDialog):
             self.browseLocalFileButton.setEnabled(True)
         else:
             self.browseLocalFileButton.setEnabled(False)
+        self.role_checkbox.setChecked(self.settings.value('role_checkbox'))
+        if(self.settings.value('role_checkbox')):
+            self.role.setEnabled(True)
+        else:
+            self.role.setEnabled(False)
+            self.role.setText('')
+            self.settings.set_value('role', '')
 
         self.browseLocalFileButton.clicked.connect(self.browseLocalFile)
         self.use_custom_file.clicked.connect(self.useLocalChanged)
+        self.role_checkbox.clicked.connect(self.useCustomRoleChanged)
         
     def browseLocalFile(self):
         qpt_file, f = QFileDialog.getOpenFileName(
@@ -62,3 +70,13 @@ class ConfigDialog(WIDGET, BASE, SettingDialog):
         else:
             self.settings.set_value('use_custom_file', False)
             self.browseLocalFileButton.setEnabled(False)
+
+    def useCustomRoleChanged(self, checked):
+        if self.role_checkbox.isChecked():
+            self.settings.set_value('role_checkbox', True)
+            self.role.setEnabled(True)
+        else:
+            self.settings.set_value('role_checkbox', False)
+            self.role.setEnabled(False)
+            self.role.setText('')
+            self.settings.set_value('role', '')

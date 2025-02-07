@@ -39,7 +39,6 @@ class ApiKeyGetter():
                 s = "https://data.geo.dk/token?username=" + urllib.parse.quote(self.username)
                 s += "&password=" + urllib.parse.quote(self.password)
                 s += "&role=" + urllib.parse.quote(self.role)
-                print(s)
                 r = requests.get(s)
                 if r.text:
                     keyNoQuote = r.text.replace('\"','')

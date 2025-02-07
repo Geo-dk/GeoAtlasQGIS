@@ -17,6 +17,7 @@ class Settings(SettingManager):
         self.add_setting(String('password', Scope.Global, ''))
         self.add_setting(String('role', Scope.Global, ''))
         self.add_setting(Bool('use_custom_file', Scope.Global, False))
+        self.add_setting(Bool('role_checkbox', Scope.Global, False))
         path = QFileInfo(os.path.realpath(__file__)).path()
         geo_path = path + '/geo/'
         if not os.path.exists(geo_path):
@@ -26,7 +27,7 @@ class Settings(SettingManager):
         self.add_setting(String('custom_qpt_file', Scope.Global, ''))
         
     def is_set(self):
-        if self.value('username') and self.value('password') and self.value('role'):
+        if self.value('username') and self.value('password'):
             return True
         return False
     

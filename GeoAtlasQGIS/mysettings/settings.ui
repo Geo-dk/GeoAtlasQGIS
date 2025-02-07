@@ -114,14 +114,21 @@
               </widget>
              </item>
              <item>
-              <widget class="QLabel" name="role_label">
+              <widget class="QCheckBox" name="role_checkbox">
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If you want to override the role used for requests. Should only be used if you have multiple roles associated with your user. Or else default role will be used.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
                <property name="text">
-                <string>Role (Can be seen on the GeoAtlasLive website in the top right corner)</string>
+                <string>Use Custom Role</string>
                </property>
               </widget>
              </item>
              <item>
-              <widget class="QLineEdit" name="role"/>
+              <widget class="QLineEdit" name="role">
+               <property name="enabled">
+                <bool>false</bool>
+               </property>
+              </widget>
              </item>
              <item>
               <widget class="QLabel" name="label">
