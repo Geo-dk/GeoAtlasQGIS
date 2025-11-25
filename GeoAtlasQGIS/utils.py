@@ -98,6 +98,7 @@ def getModelsFromCoordList(coordinates, apikey):
                 break
     if len(models) == 0:
         debugMsg(("No models for this area: ", coordinates))
+    models.append({'ID': -1, 'Name': 'DHM/Terræn Model, 0.4m'}) # Always add terrain model as fallback
     return models
     #If there is no models in the lists, then we couldnt find any.
 

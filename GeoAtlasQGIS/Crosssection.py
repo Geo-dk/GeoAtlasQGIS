@@ -239,7 +239,8 @@ class Crosssection():
         url += "&width=" + str(settings.width)
         url += "&height=" + str(settings.height)
         url += "&maxdepth=" + str(settings.depth)
-        url += "&linepointdistance=" + str(settings.linepoint)
+        url += "&linepointdistance="
+        url += str(settings.linepoint) if settings.modelid != -1 else "-1"
         if settings.drilldistance > 0:
             url += "&MaxBoringDistance=" + str(settings.drilldistance)
         # when i am debugging making large / weird crosssections 
@@ -299,6 +300,8 @@ class Crosssection():
 
     def createLegend(self, section):
         # Behavior should be the same as the websites version here. 
+        if 'Model' not in section or section['Model'] is None or 'GeoUnits' not in section['Model']:
+            return ''
         html = '<ul class="signatur">'
         for geounit in section['Model']['GeoUnits']:
             li = '<li data><span class="signatur-geoenhed-'
