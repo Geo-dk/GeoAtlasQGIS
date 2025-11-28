@@ -16,6 +16,7 @@ class Settings(SettingManager):
         self.add_setting(String('username', Scope.Global, ''))
         self.add_setting(String('password', Scope.Global, ''))
         self.add_setting(String('role', Scope.Global, ''))
+        self.add_setting(String('dataforsyningen_token', Scope.Global, ''))
         self.add_setting(Bool('use_custom_file', Scope.Global, False))
         self.add_setting(Bool('role_checkbox', Scope.Global, False))
         path = QFileInfo(os.path.realpath(__file__)).path()

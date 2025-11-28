@@ -8,7 +8,7 @@
                               -------------------
         begin                : 2019-01-21
         git sha              : $Format:%H$
-        copyright            : (C) 2019 by Geo
+        copyright            : (C) 2025 by Geo
         email                : hmd@geo.dk
  ***************************************************************************/
 
@@ -39,8 +39,9 @@ import locale
 import ctypes
 import urllib.parse
 import tempfile
-from threading import Thread, Lock
+from threading import Thread
 import re
+import xml.etree.ElementTree as ET
 
 from .utils import *
 from .virtualBoring import *
@@ -109,6 +110,7 @@ class GeoQGIS:
         self.apiKeyGetter = ApiKeyGetter(self.iface, self.settings)
         self.apiKey = self.apiKeyGetter.getApiKey()
         self.elemdict = None
+        self._dataforsyningen_cache = {}
         if self.apiKey is not None:
             self.addModelsToMap(createonlyfile=True)
             self.createElemDict()
@@ -120,8 +122,6 @@ class GeoQGIS:
         # wms layers as the tokens only last for 22 hours.
         self.register_timer_for_token_updater()
         self.update_GAL_layers_with_tokens()
-        
-
         
 
     # noinspection PyMethodMayBeStatic
@@ -161,7 +161,21 @@ class GeoQGIS:
         self.iface.mainWindow().menuBar().insertMenu( lastAction, self.menu )
         self.menu.addAction( 'Add models to map', self.addModelsToMap)
         #self.menu.addAction( 'Print Api Key', self.apiKeyGetter.printApiKey)
-        self.menu.addAction( 'Add Boreholes to map', self.addBoreHoles)
+        self.menu.addAction( 'Add Boreholes to map', lambda: self.addLayer("GAL - Boreholes", "borehole", "borehole-labels"))
+        self.menu.addAction( 'Add HydromodelTest to map', lambda: self.addLayer(
+            "GAL - HydromodelTest",
+            "geo-hydromodels:hydromodelid143-10m,geo-hydromodels:hydromodelid143-2m",
+            "",
+            "https://data.geo.dk/mapv2/geo-hydromodels/wms?token=" + self.apiKeyGetter.getApiKeyNoBearer()
+        ))
+        # Create nested submenu for adding layers
+        # We'll set the title with count after populating
+        self.layersMenu = QMenu('Add layers to map', self.menu)
+        self.menu.addMenu(self.layersMenu)
+        
+        # Populate the layers menu
+        self.populateLayersMenu(self.layersMenu)
+        
         self.menu.addAction( 'Update Tokens', self.update_GAL_layers_with_tokens)
         self.menu.addAction( 'Help', self.helpmessagebox)
         self.menu.addAction( 'About', self.aboutmessagebox)
@@ -173,6 +187,162 @@ class GeoQGIS:
 
         self.addActionsToActionBar()
         # add toolbar button and menu item
+
+
+    def populateLayersMenu(self, layersMenu):
+        layer_group_order = {
+            #0: 'Baggrundskort',
+            1: 'DHM kort og kurver', 2: 'Boringer og geofysik',
+            3: 'Danmarks undergrund', 4: 'Overfladenære og geotekniske kort', 5: 'Miljø',
+            9: 'Tærrennært grundvand', 6: 'Vand', 10: 'Satellit', 7: 'Forvaltning',
+            11: 'Andre baggrundskort', 8: 'Andre'
+        }
+        
+        configUrl = 'https://datau.geo.dk/api/v3/user/config?geoAreaid=1'
+        key = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6WyJhZG1pbkBnZW8uZGsiLCJhZG1pbkBnZW8uZGsiXSwiR0FMLklzQXV0aGVudGljYXRlZCI6IjEiLCJHQUwuVXNlck5hbWUiOiJhZG1pbkBnZW8uZGsiLCJHQUwuT3JnYW5pc2F0aW9uIjoiIiwiR0FMLkVtYWlsIjoiYWRtaW5AZ2VvLmRrIiwiR0FMLkdlb0Z1bmN0aW9ucyI6IioiLCJHQUwuR2VvRGF0YVNvdXJjZXMiOiIqIiwiR0FMLkdlb01hcHMiOiIqIiwiR0FMLkdlb01vZGVscyI6IioiLCJHQUwuSHlkcm9Nb2RlbHMiOiIqIiwiR0FMLkdlb1RlbXBsYXRlcyI6IioiLCJHQUwuR1ZMTG9nZ2VycyI6IioiLCJHQUwuR2VvQXJlYSI6IioiLCJHQUwuQmF0aHltZXRyeSI6IioiLCJHQUwuQm9yZWhvbGVMaW5rIjoiKiIsIkdBTC5Qcm9maWxlTGF5ZXJzIjoiKiIsIkdBTC5Qcm9qZWN0IjoiKj00IiwiR0FMLlByb2plY3RDb2RlIjoiIiwiR0FMLlByb2plY3RBZG1pbiI6IioiLCJHQUwuR2VvTWFwTGF5ZXJUeXBlcyI6Ii05OSIsIkdBTC5FbnZTYW1wbGVTb3VyY2VzIjoiKiIsIkdBTC5HZW9UZWNobmljYWxEYXRhIjoiKj0xIiwicm9sZSI6IkFkbWluaXN0cmF0b3IiLCJlbWFpbCI6ImFkbWluQGdlby5kayIsIm5iZiI6MTc2NDMzOTM1NCwiZXhwIjoxNzY0NDExMzU0LCJpYXQiOjE3NjQzMzkzNTR9.Il8XvMs9jl6P8YQLlNushHRRrF-v_0SQlDIOkTMrvhM"
+        #key = self.apiKeyGetter.getApiKey()
+        
+        res = requests.get(configUrl, headers={'authorization': key})
+        if res.status_code != 200:
+            debugMsg("Failed to get config for layers menu: " + str(res.status_code))
+            return
+        
+        res_json = res.json()
+        layers = res_json.get('MapLayers', [])
+        layers = [l for l in layers if l.get('Enabled', False)]
+        
+        self._buildLayerMenu(layersMenu, layers, layer_group_order)
+    
+    def _buildLayerMenu(self, target_menu, layers, group_order):
+        # boolean indicates whether the URL is "available" (unavailable is grayed out in menu)
+        custom_urls = {
+            '%geusurl%': ("https://data.geus.dk/geusmap/ows/25832.jsp?whoami=data@geo.dk", True),
+            '%dafurl%': ("https://services.datafordeler.dk/", False),
+            '%kfurl%': ("https://api.dataforsyningen.dk/", True),
+            '%dkmiljoeportalurl%': ("https://arealeditering-dist-geo.miljoeportal.dk/", True),
+            '%dkmiljoegisurl%': ("https://miljoegis.mim.dk/wms", True)
+        }
+        
+        # These layers are still failing. Need to investigate further.
+        # Jupiter (Geus) - nothing seems to happen after its added. legend works though
+        # Alle landskabsformer - extent issue. check getcapabilities
+        # Houmark kort fejler, men kun tre af dem. Extent issue også
+            # Bælthav isstrøms israndsbakke 
+            # Dødislandskab
+            # Issøbakke sand & grus
+        # Sensordata Vandstand - extent issue også. 
+        # Vindmøller KDS - Unauthorized access. How to handle? Kommer token ordentlig med, egentlig?
+        
+        def is_layer_invalid(layername):
+            if not layername:
+                return True
+            suffix = str(layername).split(':')[-1] if ':' in layername else layername
+            return suffix.lower() in ['[empty]', 'none', '']
+        
+        def process_prefix(layername, is_geo_layer):
+            # could run into issues later if we want to use a different prefix for geo layers such as geo-hydromodels
+            if not layername:
+                return ''
+            if is_geo_layer and ':' not in layername:
+                return "GEO-Services:" + layername
+            return layername
+        
+        def count_layer_styles(layer):
+            map_layer_styles = layer.get('MapLayerStyles', [])
+            count = len(map_layer_styles) if map_layer_styles else 0
+            style = layer.get('Style', '')
+            if style:
+                suffixed = str(style).strip().split(':')[-1] if ':' in style else style
+                if suffixed.lower() not in ['none', '[empty]']:
+                    count += 1
+            return max(count, 1)
+        
+        def add_layer_menu_item(menu, layer):
+            is_geo_layer = layer.get('IsGeoLayer', False)
+            layername = process_prefix(layer.get('LayerName', ''), is_geo_layer)
+            custom_url = layer.get('Url', None)
+            url_is_available = True
+            if custom_url:
+                for key, (replacement_url, is_available) in custom_urls.items():
+                    if key in custom_url:
+                        custom_url = custom_url.replace(key, replacement_url)
+                        if not is_available:
+                            url_is_available = False
+                            break
+            
+            if is_layer_invalid(layername) or not url_is_available:
+                action = menu.addAction(layer.get('Name', 'Unavngivet Lag') + " - Utilgængelig i QGIS plugin!")
+                action.setEnabled(False)
+                return
+            
+            map_layer_styles = layer.get('MapLayerStyles', [])
+            base_style = layer.get('Style', '')
+            has_valid_base_style = base_style and base_style.lower() not in ['none', '[empty]']
+            
+            if map_layer_styles:
+                layer_name = layer.get('Name', 'Unavngivet Lag')
+                count = len(map_layer_styles) + (1 if has_valid_base_style else 0)
+                styleSubmenu = QMenu(f"{layer_name} ({count})", menu)
+                
+                if has_valid_base_style:
+                    processed_style = process_prefix(base_style, is_geo_layer)
+                    styleSubmenu.addAction(layer_name, lambda t=layer_name, ln=layername, s=processed_style, url=custom_url: self.addLayer(t, ln, s, url))
+                
+                for style_entry in map_layer_styles:
+                    style_title = style_entry.get('DisplayName', style_entry.get('Name', 'Unavngivet Stil'))
+                    style_name = process_prefix(style_entry.get('Name', ''), is_geo_layer)
+                    styleSubmenu.addAction(style_title, lambda t=style_title, ln=layername, s=style_name, url=custom_url: self.addLayer(t, ln, s, url))
+                
+                menu.addMenu(styleSubmenu)
+            else:
+                title = layer.get('Name', 'Unavngivet Lag')
+                style = process_prefix(layer.get('Style', ''), is_geo_layer)
+                if custom_url and custom_url.startswith('%'):
+                    title += " - ⚠️Unfixed External Url⚠️"
+                menu.addAction(title, lambda t=title, ln=layername, s=style, url=custom_url: self.addLayer(t, ln, s, url))
+        
+        layer_groups = {}
+        for layer in layers:
+            layer_group_id = layer.get('LayerGroup', 8)
+            if layer_group_id not in layer_groups:
+                layer_groups[layer_group_id] = []
+            layer_groups[layer_group_id].append(layer)
+        
+        total_count = 0
+        for group_id in group_order.keys():
+            if group_id not in layer_groups:
+                continue
+            
+            group_layers = layer_groups[group_id]
+            group_name = group_order.get(group_id, str(group_id))
+            
+            subgroups = {}
+            no_subgroup = []
+            for layer in group_layers:
+                group_name_attr = layer.get('GroupName')
+                if group_name_attr:
+                    subgroups.setdefault(group_name_attr, []).append(layer)
+                else:
+                    no_subgroup.append(layer)
+            
+            group_count = sum(count_layer_styles(l) for l in group_layers)
+            total_count += group_count
+            
+            groupSubmenu = QMenu(f"{group_name} ({group_count})", target_menu)
+            target_menu.addMenu(groupSubmenu)
+            
+            for layer in no_subgroup:
+                add_layer_menu_item(groupSubmenu, layer)
+            
+            for subgroup_name, subgroup_layers in subgroups.items():
+                subgroup_count = sum(count_layer_styles(l) for l in subgroup_layers)
+                subgroupSubmenu = QMenu(f"{subgroup_name} ({subgroup_count})", groupSubmenu)
+                groupSubmenu.addMenu(subgroupSubmenu)
+                
+                for layer in subgroup_layers:
+                    add_layer_menu_item(subgroupSubmenu, layer)
+        
+        target_menu.setTitle(f"Add layers to map ({total_count})")
 
 
     def update_GAL_layers_with_tokens(self):
@@ -252,47 +422,188 @@ class GeoQGIS:
         self.makeMenu()
     
     def clearMenu(self):
-        del self.myToolBar
+        try:
+            del self.myToolBar
+        except (AttributeError, RuntimeError):
+            pass
         # Remove the actions and submenus
-        self.menu.clear()
-        # remove the menu bar item
         if self.menu:
-            self.menu.deleteLater()
+            try:
+                self.menu.clear()
+                self.menu.deleteLater()
+            except (AttributeError, RuntimeError):
+                pass
 
-    def addBoreHoles(self):
+    def addLayer(self, title, layername, style="", custom_url=None):
         if self.apiKeyGetter.getApiKey() is None:
             return
 
         self.ensureElemDict()
+        debugMsg(f"Adding layer: '{title}' | Layer: '{layername}' | Style: '{style}'")
 
-        debugMsg("Adding boreholes")
-        # Add boreholes with labels as a wms to current project.
-        uri = self.getBoreHoleUri()
-        #debugMsg(uri)
-        wmsLayer = QgsRasterLayer(uri,"GAL - Boreholes","wms")
-        wmsLayer.dataProvider().setDataSourceUri(uri)
-        QgsProject.instance().addMapLayer(wmsLayer, False)
-        add_layer_to_group(wmsLayer)
-        wmsLayer.triggerRepaint()
+        if ',' in layername:
+            layer_names = [ln.strip() for ln in layername.split(',')]
+            debugMsg(f"  Detected multiple layers: {layer_names}")
+            styles = [s.strip() for s in style.split(',')] if style and ',' in style else [style] * len(layer_names)
+            debugMsg(f"  Using styles: {styles}")
+            
+            root = QgsProject.instance().layerTreeRoot()
+            gal_group = root.findGroup('GAL') or root.insertGroup(0, 'GAL')
+            subgroup = gal_group.insertGroup(0, title)
+            
+            for layer_name, layer_style in zip(layer_names, styles):
+                display_name = layer_name.split(':')[-1] if ':' in layer_name else layer_name
+                uri = self.makeWmsUri(layer_name, layer_style, custom_url)
+                debugMsg(f"    Adding sub-layer: '{display_name}' | Layer: '{layer_name}' | Style: '{layer_style}'")
+                layer = QgsRasterLayer(uri, display_name, "wms")
+                
+                QgsProject.instance().addMapLayer(layer, False)
+                layer_node = subgroup.addLayer(layer)
+                if not layer.isValid():
+                    error_msg = layer.dataProvider().error().message() if layer.dataProvider() else "No provider"
+                    debugMsg(f"    Sub-layer '{display_name}' is not valid")
+                    debugMsg(f"      Layer Name: {layer_name} | Style: {layer_style}")
+                    debugMsg(f"      URI: {uri}")
+                    debugMsg(f"      Provider Error: {error_msg}")
+                    if layer_node:
+                        layer_node.setItemVisibilityChecked(False)
+                else:
+                    debugMsg(f"      URI: {uri}")
+                    debugMsg(f"    Sub-layer '{display_name}' added successfully")
+                    layer.triggerRepaint()
+        else:
+            uri = self.makeWmsUri(layername, style, custom_url)
+            layer = QgsRasterLayer(uri, title, "wms")
+            
+            QgsProject.instance().addMapLayer(layer, False)
+            layer_node = add_layer_to_group(layer, 'GAL')
+            if not layer.isValid():
+                error_msg = layer.dataProvider().error().message() if layer.dataProvider() else "No provider"
+                debugMsg(f"    Layer '{title}' is not valid")
+                debugMsg(f"      Layer Name: {layername} | Style: {style}")
+                debugMsg(f"      URI: {uri}")
+                debugMsg(f"      Provider Error: {error_msg}")
+                if layer_node:
+                    layer_node.setItemVisibilityChecked(False)
+            else:
+                debugMsg(f"      URI: {uri}")
+                debugMsg(f"Layer '{title}' added successfully")
+                layer.triggerRepaint()
 
-    def getBoreHoleUri(self):
-        # Build up the uri
+
+    def makeWmsUri(self, layername, style, custom_url=None):
+        layername = (layername or '').strip()
+        style = (style or '').strip()
+
+        def should_ignore_style(style_value):
+            if not style_value:
+                return True
+            style_lower = style_value.lower()
+            if ':' in style_lower:
+                style_lower = style_lower.split(':', 1)[1]
+            return style_lower in ['[empty]', 'none', '']
+
+        if should_ignore_style(style):
+            style = ''
+
         quri = QgsDataSourceUri()
-        quri.setParam("IgnoreGetFeatureInfoUrl", '1') 
+        quri.setParam("IgnoreGetFeatureInfoUrl", '1')
         quri.setParam("IgnoreGetMapUrl", '1')
         quri.setParam("contextualWMSLegend", '0')
         quri.setParam("crs", 'EPSG:25832')
         quri.setParam("dpiMode", '7')
         quri.setParam("featureCount", '10')
         quri.setParam("format", 'image/png')
-        quri.setParam("layers", 'GEO-Services:borehole')
-        quri.setParam("styles", 'GEO-Services:borehole-labels')
-        url = 'https://data.geo.dk/mapv2/GEO-Services/wms?VERSION=1.3.0&FORMAT=image%2Fpng&TRANSPARENT=true&layers=borehole&styles=borehole-labels&CRS=EPSG%3A25832&STYLES='
-        url += "&token=" + str(self.apiKeyGetter.getApiKeyNoBearer())
+        quri.setParam("transparent", 'true')
+
+        if custom_url:
+            url = self._ensure_token(custom_url)
+            layername = self._normalize_layer_name(url, layername)
+            style = self._normalize_layer_name(url, style) if style else ''
+        else:
+            default_url = 'https://data.geo.dk/mapv2/GEO-Services/wms?VERSION=1.3.0&CRS=EPSG%3A25832'
+            url = self._ensure_token(default_url)
+            layername = self._normalize_layer_name(url, layername)
+            style = self._normalize_layer_name(url, style) if style else ''
+
+        quri.setParam("layers", layername)
+        quri.setParam("styles", style)
         quri.setParam("url", url)
-        uri = str(quri.encodedUri())[2:-1]
-        debugMsg("Borehole uri: " + urllib.parse.unquote(uri))
-        return uri
+        return str(quri.encodedUri())[2:-1]
+
+    def _ensure_token(self, url):
+        if not url:
+            return url
+        token = None
+        
+        if 'geo.dk' in url.lower():
+            token = self.apiKeyGetter.getApiKeyNoBearer()
+
+        if 'dataforsyningen.dk' in url.lower():
+            token = self.settings.value('dataforsyningen_token')
+            
+        if token:
+            parsed = urllib.parse.urlparse(url)
+            query_items = urllib.parse.parse_qsl(parsed.query, keep_blank_values=True)
+            if not any(key.lower() == 'token' for key, _ in query_items):
+                query_items.append(('TOKEN', token))
+                new_query = urllib.parse.urlencode(query_items)
+                return urllib.parse.urlunparse(parsed._replace(query=new_query))
+        
+        return url
+
+    def _normalize_layer_name(self, url, layername):
+        if not layername or not url:
+            return layername
+
+        try:
+            parsed = urllib.parse.urlparse(url)
+        except ValueError:
+            return layername
+
+        base_url = urllib.parse.urlunparse((parsed.scheme, parsed.netloc, parsed.path, '', '', ''))
+        
+        cache = self._dataforsyningen_cache.setdefault(base_url.lower(), {})
+        
+        layername_suffix = layername.split(':', 1)[-1] if ':' in layername else layername
+        cache_key = layername_suffix.lower()
+        if cache_key in cache:
+            return cache[cache_key]
+
+        query_pairs = urllib.parse.parse_qsl(parsed.query, keep_blank_values=True)
+        params_upper = {k.upper(): v for k, v in query_pairs}
+
+        request_params = {'SERVICE': params_upper.get('SERVICE', 'WMS'), 'REQUEST': 'GetCapabilities'}
+        if 'VERSION' in params_upper:
+            request_params['VERSION'] = params_upper['VERSION']
+        if 'TOKEN' in params_upper:
+            request_params['TOKEN'] = params_upper['TOKEN']
+
+        try:
+            response = requests.get(base_url, params=request_params, timeout=10)
+            response.raise_for_status()
+            root = ET.fromstring(response.content)
+        except (requests.RequestException, ET.ParseError) as exc:
+            debugMsg(f"    Could not normalize layer name '{layername}' for {base_url}: {exc}")
+            cache[cache_key] = layername
+            return layername
+
+        for name_elem in root.findall('.//{*}Layer/{*}Name'):
+            name_text = (name_elem.text or '').strip()
+            if name_text:
+                suffix = name_text.split(':', 1)[-1] if ':' in name_text else name_text
+                cache.setdefault(suffix.lower(), name_text)
+                cache.setdefault(name_text.lower(), name_text)
+
+        result = cache.get(layername.lower()) or cache.get(cache_key)
+        
+        if not result:
+            debugMsg(f"    Layer '{layername}' not found in GetCapabilities for {base_url}")
+            cache[cache_key] = layername
+            return layername
+        
+        cache[cache_key] = result
+        return result
 
 
     def addModelsToMap(self, createonlyfile = False):
