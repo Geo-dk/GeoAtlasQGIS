@@ -46,7 +46,7 @@
                 <x>0</x>
                 <y>0</y>
                 <width>1032</width>
-                <height>331</height>
+                <height>423</height>
               </rect>
             </property>
             <property name="sizePolicy">
@@ -134,32 +134,115 @@
                             </widget>
                           </item>
                           <item>
-                            <widget class="QLabel" name="dataforsyningen_token_label">
-                              <property name="toolTip">
-                                <string>
-                                  &lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Token for
-                                  accessing Dataforsyningen layers via GAL plugin. Get your token
-                                  from &lt;a
-                                  href=&quot;https://dataforsyningen.dk&quot;&gt;dataforsyningen.dk&lt;/a&gt;,
-                                  or from the Dataforsyningen QGIS plugin
-                                  settings.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                            <widget class="QGroupBox" name="external_auth_groupbox">
+                              <property name="title">
+                                <string>External Provider Auth</string>
                               </property>
-                              <property name="text">
-                                <string>Dataforsyningen Token</string>
-                              </property>
-                            </widget>
-                          </item>
-                          <item>
-                            <widget class="QLineEdit" name="dataforsyningen_token">
-                              <property name="toolTip">
-                                <string>
-                                  &lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Token for
-                                  accessing Dataforsyningen layers via GAL plugin. Get your token
-                                  from &lt;a
-                                  href=&quot;https://dataforsyningen.dk&quot;&gt;dataforsyningen.dk&lt;/a&gt;,
-                                  or from the Dataforsyningen QGIS plugin
-                                  settings.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                              </property>
+                              <layout class="QVBoxLayout" name="verticalLayout_6">
+                                <item>
+                                  <widget class="QLabel" name="dataforsyningen_token_label">
+                                    <property name="toolTip">
+                                      <string>
+                                        &lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Token for
+                                        accessing Dataforsyningen layers via GAL plugin. Get your
+                                        token
+                                        from &lt;a
+                                        href=&quot;https://dataforsyningen.dk&quot;&gt;dataforsyningen.dk&lt;/a&gt;,
+                                        or from the Dataforsyningen QGIS plugin
+                                        settings.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                                    </property>
+                                    <property name="text">
+                                      <string>Dataforsyningen Token</string>
+                                    </property>
+                                  </widget>
+                                </item>
+                                <item>
+                                  <widget class="QLineEdit" name="dataforsyningen_token">
+                                    <property name="toolTip">
+                                      <string>
+                                        &lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Token for
+                                        accessing Dataforsyningen layers via GAL plugin. Get your
+                                        token
+                                        from &lt;a
+                                        href=&quot;https://dataforsyningen.dk&quot;&gt;dataforsyningen.dk&lt;/a&gt;,
+                                        or from the Dataforsyningen QGIS plugin
+                                        settings.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                                    </property>
+                                  </widget>
+                                </item>
+                                <item>
+                                  <widget class="QGroupBox" name="datafordeler_groupbox">
+                                    <property name="title">
+                                      <string>Datafordeler Username &amp;&amp; Pasword</string>
+                                    </property>
+                                    <property name="toolTip">
+                                      <string>
+                                        &lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Username and
+                                        Password for accessing Datafordeler layers. Get your
+                                        credentials from &lt;a
+                                        href=&quot;https://datafordeler.dk&quot;&gt;datafordeler.dk&lt;/a&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                                    </property>
+                                    <layout class="QHBoxLayout" name="horizontalLayout_3">
+                                      <item>
+                                        <widget class="QLabel" name="datafordeler_username_label">
+                                          <property name="text">
+                                            <string>Username</string>
+                                          </property>
+                                          <property name="toolTip">
+                                            <string>
+                                              &lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Username
+                                              for
+                                              accessing Datafordeler layers. Get your credentials
+                                              from
+                                              &lt;a
+                                              href=&quot;https://datafordeler.dk&quot;&gt;datafordeler.dk&lt;/a&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                                          </property>
+                                        </widget>
+                                      </item>
+                                      <item>
+                                        <widget class="QLineEdit" name="datafordeler_username" />
+                                        <property name="toolTip">
+                                          <string>
+                                            &lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Username
+                                            for
+                                            accessing Datafordeler layers. Get your credentials
+                                            from
+                                            &lt;a
+                                            href=&quot;https://datafordeler.dk&quot;&gt;datafordeler.dk&lt;/a&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                                        </property>
+                                      </item>
+                                      <item>
+                                        <widget class="QLabel" name="datafordeler_password_label">
+                                          <property name="text">
+                                            <string>Password</string>
+                                          </property>
+                                          <property name="toolTip">
+                                            <string>
+                                              &lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Password
+                                              for
+                                              accessing Datafordeler layers. Get your credentials
+                                              from
+                                              &lt;a
+                                              href=&quot;https://datafordeler.dk&quot;&gt;datafordeler.dk&lt;/a&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                                          </property>
+                                        </widget>
+                                      </item>
+                                      <item>
+                                        <widget class="QLineEdit" name="datafordeler_password" />
+                                        <property name="toolTip">
+                                          <string>
+                                            &lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Password
+                                            for
+                                            accessing Datafordeler layers. Get your credentials
+                                            from
+                                            &lt;a
+                                            href=&quot;https://datafordeler.dk&quot;&gt;datafordeler.dk&lt;/a&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                                        </property>
+                                      </item>
+                                    </layout>
+                                  </widget>
+                                </item>
+                              </layout>
                             </widget>
                           </item>
                           <item>
@@ -205,17 +288,19 @@
                               </layout>
                             </widget>
                           </item>
+                          <item>
+                            <widget class="QCheckBox" name="use_dev_environment">
+                              <property name="text">
+                                <string>Use Development Environment (datau)</string>
+                              </property>
+                              <property name="toolTip">
+                                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Check this to
+                                  use the datau (development/testing) environment instead of the
+                                  production data environment.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                              </property>
+                            </widget>
+                          </item>
                         </layout>
-                        <zorder>dataforsyningen_token_label</zorder>
-                        <zorder>username_label</zorder>
-                        <zorder>username</zorder>
-                        <zorder>password_label</zorder>
-                        <zorder>password</zorder>
-                        <zorder>role_checkbox</zorder>
-                        <zorder>role</zorder>
-                        <zorder>dataforsyningen_token</zorder>
-                        <zorder>label</zorder>
-                        <zorder>frame_3</zorder>
                       </widget>
                     </item>
                   </layout>

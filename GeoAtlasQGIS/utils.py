@@ -57,8 +57,6 @@ def debugMsg(message):
     #Puts text in the logs.
     QgsMessageLog.logMessage(str(message), tag="GeoAtlas", level = Qgis.Info)
 
-"""https://data.geo.dk/api/v3/MapLegend?geoareaid=1&name=slice-kote&modelid=30&bbox=722482.0000000001,6174676.000000001,724221.2000000001,6175978.400000001&kote=-10"""
-
 class GeoBoundingBox:
         def __init__(self, min_x, min_y, max_x, max_y):
                 self.min_x = min_x
@@ -82,11 +80,11 @@ class GeoPoint:
 
 SAVEDMODELS = None
 
-def getModelsFromCoordList(coordinates, apikey):
+def getModelsFromCoordList(coordinates, apikey, base_url='https://data.geo.dk'):
     # Later on using WFS models might be useful, as it allows for greater accuracy but add high time cost
     global SAVEDMODELS
     if SAVEDMODELS is None:
-        SAVEDMODELS = requests.get("https://data.geo.dk/api/v3/geomodel?geoareaid=1", headers={'authorization': apikey}).json()
+        SAVEDMODELS = requests.get(f"{base_url}/api/v3/geomodel?geoareaid=1", headers={'authorization': apikey}).json()
     models = []
     #Request the models for each point
     for model in SAVEDMODELS:
@@ -102,13 +100,14 @@ def getModelsFromCoordList(coordinates, apikey):
     return models
     #If there is no models in the lists, then we couldnt find any.
 
-def get_models_for_bounding_box(bbox, apikey):
-    url = "https://data.geo.dk/api/v3/geomodel?geoareaid=1&bbox=" + bbox.to_string()
+def get_models_for_bounding_box(bbox, apikey, base_url='https://data.geo.dk'):
+    url = f"{base_url}/api/v3/geomodel?geoareaid=1&bbox=" + bbox.to_string()
     message = requests.get(url , headers={'authorization': apikey})
     return message.json()
 
-def get_models_for_point(point, elemdict, apikey):
-    url = "https://data.geo.dk/api/v3/geomodel?geoareaid=1&x=" + str(point[0]) + "&y=" + str(point[1])
+def get_models_for_point(point, elemdict, apikey, base_url='https://data.geo.dk'):
+    url = f"{base_url}/api/v3/geomodel?geoareaid=1&x=" + str(point[0]) + "&y=" + str(point[1])
+    debugMsg("Requesting models for point with url: " + url)
     models = requests.get(url, headers={'authorization': apikey}).json()
     #Construct a polygon of each model by their outer coordinates, and see if the point is within this polygon
     for model in models.copy(): # work on copy, or else python funny moment when removing while iterating
@@ -129,6 +128,9 @@ def get_models_for_point(point, elemdict, apikey):
             continue
     if len(models) == 0:
         debugMsg(("No models for this area: ", point))
+    else:
+        for model in models:
+            debugMsg("Model found: " + str(model))
 
     return models
 

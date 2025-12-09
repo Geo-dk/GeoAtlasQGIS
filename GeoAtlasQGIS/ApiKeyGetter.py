@@ -17,6 +17,7 @@ class ApiKeyGetter():
         self.username = self.settings.value('username')
         self.password = self.settings.value('password')
         self.role = self.settings.value('role')
+        self.use_dev_environment = self.settings.value('use_dev_environment')
         self.time_last_key = None
 
     def settingsHasChanged(self):
@@ -30,13 +31,17 @@ class ApiKeyGetter():
         if self.settings.value('role') != self.role:
             changed = True
             self.role = self.settings.value('role')
+        if self.settings.value('use_dev_environment') != self.use_dev_environment:
+            changed = True
+            self.use_dev_environment = self.settings.value('use_dev_environment')
         return changed
         
 
     def getApiKey(self):
         if self.should_get_new_key():
             if self.settings.is_set():
-                s = "https://data.geo.dk/token?username=" + urllib.parse.quote(self.username)
+                base_url = self.settings.get_geo_base_url()
+                s = f"{base_url}/token?username=" + urllib.parse.quote(self.username)
                 s += "&password=" + urllib.parse.quote(self.password)
                 s += "&role=" + urllib.parse.quote(self.role)
                 debugMsg("Getting new API Key from GAL api with url: " + s)

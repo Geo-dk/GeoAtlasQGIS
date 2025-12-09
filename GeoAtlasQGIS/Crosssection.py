@@ -214,7 +214,8 @@ class Crosssection():
             return line
     
     def updateAvailableModels(self, coords):
-        self.currentModels = getModelsFromCoordList(coords, self.apiKeyGetter.getApiKey())
+        base_url = self.usersettings.get_geo_base_url()
+        self.currentModels = getModelsFromCoordList(coords, self.apiKeyGetter.getApiKey(), base_url)
         #If no models exist for this area, use the Terræn model.
         if self.currentModels:
             try:
@@ -234,7 +235,8 @@ class Crosssection():
             self.dlg.setModels([item['Name'] for item in self.currentModels if 'Name' in item])
 
     def getCrosssectionFromUri(self, coords, settings):
-        url = "https://data.geo.dk/api/v3/crosssection?geoareaid=1&path=" + str(coords).replace(" ", "") 
+        base_url = self.usersettings.get_geo_base_url()
+        url = f"{base_url}/api/v3/crosssection?geoareaid=1&path=" + str(coords).replace(" ", "") 
         url += "&geomodelid=" + str(settings.modelid)
         url += "&width=" + str(settings.width)
         url += "&height=" + str(settings.height)
@@ -317,7 +319,8 @@ class Crosssection():
         self.dlg.setHtml(svg)
 
     def getAvailableModels(self, coordinates):
-        return getModelsFromCoordList(coordinates, self.apiKeyGetter.getApiKey())
+        base_url = self.usersettings.get_geo_base_url()
+        return getModelsFromCoordList(coordinates, self.apiKeyGetter.getApiKey(), base_url)
 
     def boreHoleBuffer(self, settings):
         layer = self.getworkinglayer()

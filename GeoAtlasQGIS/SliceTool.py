@@ -9,15 +9,15 @@ from qgis.core import *
 
  
 MAPTYPE = "IgnoreGetFeatureInfoUrl=1&IgnoreGetMapUrl=1&contextualWMSLegend=0&crs=EPSG:25832&dpiMode=7&featureCount=10&format=image/png&layers=" #slice-kote-524 #TYPE_MODELID
-URLPART1 = "https://data.geo.dk/mapv2/slice-tools?VERSION%3D1.3.0%26TRANSPARENT%3DTRUE%26LAYERS%3D" #slice_dhm #TYPE
 URLPART2 = "%26viewparams%3Dmodel%3A" #30 #MODELID
 URLPART3 = "%3B" #-10 #LEVEL
 
 
 class SliceTool():
-    def __init__(self, iface, elemtree, apiKeyGetter):
+    def __init__(self, iface, elemtree, apiKeyGetter, usersettings):
         self.iface = iface
         self.apiKeyGetter = apiKeyGetter
+        self.usersettings = usersettings
         self.sliceDepth = 10
         self.modelid = 2
         self.model = None
@@ -92,7 +92,8 @@ class SliceTool():
         quri.setParam("format", 'image/png')
         quri.setParam("layers", slice_type.replace("_", "-") + "-" + str(model))
         quri.setParam("styles", 'default')
-        url = URLPART1 + slice_type 
+        base_url = self.usersettings.get_geo_base_url()
+        url = f"{base_url}/mapv2/slice-tools?VERSION%3D1.3.0%26TRANSPARENT%3DTRUE%26LAYERS%3D" + slice_type 
         url += URLPART2 + str(model)
         url += URLPART3
         if slice_type == "slice_kote":
@@ -123,7 +124,7 @@ class SliceTool():
         if self.apiKeyGetter.getApiKey() is not None:
             point = self.iface.mapCanvas().center() 
             # Get model intersecting center of screen
-            self.currentModels = get_models_for_point([point.x(), point.y()], self.elemdict, self.apiKeyGetter.getApiKey())
+            self.currentModels = get_models_for_point([point.x(), point.y()], self.elemdict, self.apiKeyGetter.getApiKey(), self.usersettings.get_geo_base_url())
             self.modelid = 0 
             if self.currentModels:
                 try:
