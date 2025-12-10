@@ -186,6 +186,7 @@ class GeoQGIS:
             self.myToolBar = self.iface.addToolBar( u'GeoAtlasToolBar' )
             self.myToolBar.setObjectName( u'GeoAtlasToolBar' )
 
+        self.myToolBar.clear()
         self.addActionsToActionBar()
         # add toolbar button and menu item
 
@@ -521,17 +522,13 @@ class GeoQGIS:
         self.makeMenu()
     
     def clearMenu(self):
-        try:
-            del self.myToolBar
-        except (AttributeError, RuntimeError):
-            pass
-        # Remove the actions and submenus
+        if self.myToolBar:
+            self.iface.mainWindow().removeToolBar(self.myToolBar)
+            self.myToolBar = None
         if self.menu:
-            try:
-                self.menu.clear()
-                self.menu.deleteLater()
-            except (AttributeError, RuntimeError):
-                pass
+            self.iface.mainWindow().menuBar().removeAction(self.menu.menuAction())
+            self.menu.deleteLater()
+            self.menu = None
         self.layersMenu = None
         self.hydromodelsMenu = None
 
