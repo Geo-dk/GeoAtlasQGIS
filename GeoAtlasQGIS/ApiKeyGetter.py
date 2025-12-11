@@ -20,6 +20,7 @@ class ApiKeyGetter():
         self.use_dev_environment = self.settings.value('use_dev_environment')
         self.time_last_key = None
 
+    # this method is only relevant for settings regarding getting a GAL API key.
     def settingsHasChanged(self):
         changed = False
         if self.settings.value('username') != self.username:

@@ -23,7 +23,7 @@ repository=https://github.com/Geo-dk/GeoAtlasQGIS
 # Recommended items:
 
 # Uncomment the following line and add your changelog:
-changelog= Added a menu to add most layers from GeoAtlas directly.
+changelog= Added menus to add most layers from GeoAtlas. Including various WMS layers, as well as hydromodel layers.
 
 # Tags are comma separated with spaces allowed
 tags=python
