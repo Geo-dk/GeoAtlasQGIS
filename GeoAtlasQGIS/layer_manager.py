@@ -243,7 +243,7 @@ class LayerManager:
             gal_group = root.findGroup('GAL') or root.insertGroup(0, 'GAL')
             subgroup = gal_group.insertGroup(0, title)
             
-            for layer_name, layer_style in zip(layer_names, styles):
+            for layer_name, layer_style in reversed(list(zip(layer_names, styles))):
                 display_name = layer_name.split(':')[-1] if ':' in layer_name else layer_name
                 uri = self.makeWmsUri(layer_name, layer_style, custom_url)
                 debugMsg(f"    Adding sub-layer: '{display_name}' | Layer: '{layer_name}' | Style: '{layer_style}'")
