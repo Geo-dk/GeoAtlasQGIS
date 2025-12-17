@@ -128,9 +128,6 @@ def get_models_for_point(point, elemdict, apikey, base_url='https://data.geo.dk'
             continue
     if len(models) == 0:
         debugMsg(("No models for this area: ", point))
-    else:
-        for model in models:
-            debugMsg("Model found: " + str(model))
 
     return models
 
