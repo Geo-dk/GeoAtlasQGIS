@@ -2,6 +2,8 @@ from PyQt5.QtWidgets import QMenu
 import requests
 import urllib.parse
 import xml.etree.ElementTree as ET
+import base64
+import json
 from qgis.core import QgsProject, QgsRasterLayer, QgsDataSourceUri
 
 from .utils import debugMsg, add_layer_to_group
@@ -232,6 +234,13 @@ class LayerManager:
 
         self.geo_qgis.model_manager.ensureElemDict()
         debugMsg(f"Adding layer: '{title}' | Layer: '{layername}' | Style: '{style}'")
+        extra_params = {}
+
+        if 'gvlloggers' in layername.lower():
+            token = urllib.parse.unquote(self.geo_qgis.apiKeyGetter.getApiKeyNoBearer())
+            logger_ids = self._extract_gvl_logger_ids(token)
+            if logger_ids:
+                extra_params['viewparams'] = f"groupids:{logger_ids}"
 
         if ',' in layername:
             layer_names = [ln.strip() for ln in layername.split(',')]
@@ -245,7 +254,7 @@ class LayerManager:
             
             for layer_name, layer_style in reversed(list(zip(layer_names, styles))):
                 display_name = layer_name.split(':')[-1] if ':' in layer_name else layer_name
-                uri = self.makeWmsUri(layer_name, layer_style, custom_url)
+                uri = self.makeWmsUri(layer_name, layer_style, custom_url, extra_params)
                 debugMsg(f"    Adding sub-layer: '{display_name}' | Layer: '{layer_name}' | Style: '{layer_style}'")
                 layer = QgsRasterLayer(uri, display_name, "wms")
                 
@@ -268,7 +277,7 @@ class LayerManager:
                     debugMsg(f"    Sub-layer '{display_name}' added successfully")
                     layer.triggerRepaint()
         else:
-            uri = self.makeWmsUri(layername, style, custom_url)
+            uri = self.makeWmsUri(layername, style, custom_url, extra_params)
             layer = QgsRasterLayer(uri, title, "wms")
             
             QgsProject.instance().addMapLayer(layer, False)
@@ -401,6 +410,24 @@ class LayerManager:
         quri.setParam("styles", style)
         quri.setParam("url", url)
         return str(quri.encodedUri())[2:-1]
+
+    def _extract_gvl_logger_ids(self, token):
+        if not token:
+            return None
+
+        try:
+            parts = token.split('.')
+            decoded_bytes = base64.urlsafe_b64decode(parts[1].encode('utf-8'))
+            payload = json.loads(decoded_bytes.decode('utf-8'))
+
+            value = payload.get('GAL.GVLLoggers')
+            if value == '*':
+                return '-99'
+
+            return value
+        except Exception as exc:
+            debugMsg(f"    Failed to decode GVLLoggers from token: {exc}")
+            return None
 
     def _ensure_auth(self, url):
         if not url:
