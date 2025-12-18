@@ -173,7 +173,7 @@
                                 <item>
                                   <widget class="QGroupBox" name="datafordeler_groupbox">
                                     <property name="title">
-                                      <string>Datafordeler Username &amp;&amp; Pasword</string>
+                                      <string>Datafordeler Username &amp;&amp; Password</string>
                                     </property>
                                     <property name="toolTip">
                                       <string>
@@ -200,16 +200,17 @@
                                         </widget>
                                       </item>
                                       <item>
-                                        <widget class="QLineEdit" name="datafordeler_username" />
-                                        <property name="toolTip">
-                                          <string>
-                                            &lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Username
-                                            for
-                                            accessing Datafordeler layers. Get your credentials
-                                            from
-                                            &lt;a
-                                            href=&quot;https://datafordeler.dk&quot;&gt;datafordeler.dk&lt;/a&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                                        </property>
+                                        <widget class="QLineEdit" name="datafordeler_username">
+                                          <property name="toolTip">
+                                            <string>
+                                              &lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Username
+                                              for
+                                              accessing Datafordeler layers. Get your credentials
+                                              from
+                                              &lt;a
+                                              href=&quot;https://datafordeler.dk&quot;&gt;datafordeler.dk&lt;/a&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                                          </property>
+                                        </widget>
                                       </item>
                                       <item>
                                         <widget class="QLabel" name="datafordeler_password_label">
@@ -228,16 +229,20 @@
                                         </widget>
                                       </item>
                                       <item>
-                                        <widget class="QLineEdit" name="datafordeler_password" />
-                                        <property name="toolTip">
-                                          <string>
-                                            &lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Password
-                                            for
-                                            accessing Datafordeler layers. Get your credentials
-                                            from
-                                            &lt;a
-                                            href=&quot;https://datafordeler.dk&quot;&gt;datafordeler.dk&lt;/a&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                                        </property>
+                                        <widget class="QLineEdit" name="datafordeler_password">
+                                          <property name="toolTip">
+                                            <string>
+                                              &lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Password
+                                              for
+                                              accessing Datafordeler layers. Get your credentials
+                                              from
+                                              &lt;a
+                                              href=&quot;https://datafordeler.dk&quot;&gt;datafordeler.dk&lt;/a&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                                          </property>
+                                          <property name="echoMode">
+                                            <enum>QLineEdit::Password</enum>
+                                          </property>
+                                        </widget>
                                       </item>
                                     </layout>
                                   </widget>

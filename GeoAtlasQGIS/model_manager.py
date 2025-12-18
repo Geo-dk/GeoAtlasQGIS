@@ -24,10 +24,9 @@ class ModelManager:
         if not os.path.exists(tmppath):
             os.makedirs(tmppath)
 
-        file = open(tmppath + "models.json", "w")
-        file.write(json_content)
-        jsonpath = os.path.realpath(file.name)
-        file.close()
+        jsonpath = os.path.realpath(tmppath + "models.json")
+        with open(jsonpath, "w", encoding="utf-8") as file:
+            file.write(json_content)
 
         if not createonlyfile:
             vlayer = QgsVectorLayer(jsonpath, "GAL - Models", "ogr")

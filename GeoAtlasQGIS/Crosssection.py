@@ -4,18 +4,13 @@ from .Crosssection_dialog import CrosssectionDialog
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
-from PyQt5.QtSvg import QSvgWidget, QSvgRenderer
-from PyQt5.QtWebKitWidgets import QWebView
 from qgis.gui import *
 from qgis.core import *
-from operator import itemgetter
 from qgis.PyQt.QtXml import QDomDocument
 import os 
 from .virtualBoring_dialog import *
 import math
-import threading
 import requests
-import urllib.parse
 import math
 import processing
 from processing.core.Processing import Processing

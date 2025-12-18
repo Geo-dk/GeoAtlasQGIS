@@ -1,15 +1,7 @@
-from distutils import debug
-from os import remove
 from qgis.core import *
-from PyQt5.QtCore import QTimer
 import requests
-from operator import itemgetter
 from math import atan, pi, sqrt
-from datetime import datetime
-import xml.etree.ElementTree as ET
-import tempfile
 from shapely import geometry
-import time
 import traceback
 
 def add_layer_to_group(layer, groupname='GAL'):

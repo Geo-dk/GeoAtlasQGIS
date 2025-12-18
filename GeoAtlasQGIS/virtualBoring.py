@@ -88,7 +88,7 @@ class VirtualBoringTool():
 
     def makeBoring(self, task, x, y, modelid, depth, apikey):
         base_url = self.usersettings.get_geo_base_url()
-        return requests.get(f"{base_url}/api/v3/virtualboring?geoareaid=1&modelId= " + str(modelid) + "&type=bar&x=" + str(x) + "&y=" + str(y) + "&maxDepth=" + str(depth),
+        return requests.get(f"{base_url}/api/v3/virtualboring?geoareaid=1&modelId=" + str(modelid) + "&type=bar&x=" + str(x) + "&y=" + str(y) + "&maxDepth=" + str(depth),
                                headers={'authorization': apikey})
 
     def makeUi(self):

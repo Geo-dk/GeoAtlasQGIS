@@ -1,5 +1,6 @@
 from PyQt5.QtWidgets import QMenu
 import requests
+import time
 import urllib.parse
 import xml.etree.ElementTree as ET
 import base64
@@ -12,6 +13,7 @@ class LayerManager:
     def __init__(self, geo_qgis):
         self.geo_qgis = geo_qgis
         self._capabilities_cache = {}
+        self._capabilities_retry_after_seconds = 300
 
     def buildLayerMenu(self, target_menu, layers, group_order):
         # boolean indicates whether the URL is "available" (unavailable is grayed out in menu, and labeled unavailable)
@@ -62,8 +64,6 @@ class LayerManager:
             if is_layer_invalid(layername) or not url_is_available:
                 if not url_is_available:
                     debugMsg("Layer URL unavailable: '" + layer.get('Name', 'Unnamed Layer') + f"'{missing_auth_message}")
-                #else:
-                #    debugMsg("Layer name '" + layername + "' invalid for layer '" + layer.get('Name', 'Unnamed Layer') + "'. Marking as unavailable.")
                 suffix = missing_auth_message or " - Utilgængelig i QGIS plugin!"
                 action = menu.addAction(layer.get('Name', 'Unavngivet Lag') + suffix)
                 action.setEnabled(False)
@@ -281,7 +281,8 @@ class LayerManager:
             layer = QgsRasterLayer(uri, title, "wms")
             
             QgsProject.instance().addMapLayer(layer, False)
-            layer_node = add_layer_to_group(layer, 'GAL')
+            add_layer_to_group(layer, 'GAL')
+            layer_node = QgsProject.instance().layerTreeRoot().findLayer(layer.id())
             if not layer.isValid():
                 error_msg = layer.dataProvider().error().message() if layer.dataProvider() else "No provider"
                 debugMsg(f"    Layer '{title}' is not valid")
@@ -400,7 +401,8 @@ class LayerManager:
                     query_items = [item for item in query_items if item[0].lower() != str(key).lower()]
                     query_items.append((key, value))
                 url = urllib.parse.urlunparse(parsed_extra._replace(query=urllib.parse.urlencode(query_items, doseq=True)))
-            except ValueError:
+            except ValueError as e:
+                debugMsg(f"Failed to apply extra WMS URL parameters {extra_params!r} to {url!r}: {e}")
                 pass
 
         layername = self._normalize_layer_name(url, layername)
@@ -515,8 +517,16 @@ class LayerManager:
 
     def _get_capability_layer_names(self, capability_url):
         cached = self._capabilities_cache.get(capability_url)
+        now = time.time()
         if cached is not None:
-            return cached
+            # Backward compatibility: old cache stored only the names list
+            if isinstance(cached, list):
+                return cached
+            names, expiry = cached
+            if expiry is None or now < expiry:
+                return names
+            # expired negative cache
+            self._capabilities_cache.pop(capability_url, None)
 
         try:
             response = requests.get(capability_url, timeout=10)
@@ -524,6 +534,8 @@ class LayerManager:
         except requests.RequestException as exc:
             host = urllib.parse.urlparse(capability_url).netloc
             debugMsg(f"    Could not load capabilities from '{host}': {exc}")
+            # cache negative result for a short period to avoid spamming retries
+            self._capabilities_cache[capability_url] = ([], now + self._capabilities_retry_after_seconds)
             return []
 
         try:
@@ -531,6 +543,7 @@ class LayerManager:
         except ET.ParseError as exc:
             host = urllib.parse.urlparse(capability_url).netloc
             debugMsg(f"    Failed to parse capabilities from '{host}': {exc}")
+            self._capabilities_cache[capability_url] = ([], now + self._capabilities_retry_after_seconds)
             return []
 
         names = []
@@ -543,7 +556,8 @@ class LayerManager:
             host = urllib.parse.urlparse(capability_url).netloc
             debugMsg(f"    Discovered {len(names)} layer name(s) from '{host}' capabilities")
 
-        self._capabilities_cache[capability_url] = names
+        # Successful fetch: cache without expiry (until plugin/session ends)
+        self._capabilities_cache[capability_url] = (names, None)
         return names
 
     def refreshLayersMenu(self):
@@ -616,5 +630,6 @@ class LayerManager:
                     return False, " - Missing 'datafordeler' credentials in settings", None
                 auth = {"username": username, "password": password}
         except:
+            debugMsg("Failed to check auth availability for URL: " + str(url))
             pass
         return True, "", auth

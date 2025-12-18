@@ -21,27 +21,15 @@
  *                                                                         *
  ***************************************************************************/
 """
-from venv import create
-import requests
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
-from PyQt5.QtSvg import QSvgWidget, QSvgRenderer
-from PyQt5.QtWebKitWidgets import QWebView
 # Initialize Qt resources from file resources.py
 
-import time
 from qgis.gui import *
 from qgis.core import *
-from operator import itemgetter
 import os
-import locale
-import ctypes
-import urllib.parse
-import tempfile
-from threading import Thread
 import re
-import xml.etree.ElementTree as ET
 
 from .utils import *
 from .virtualBoring import *
@@ -52,8 +40,6 @@ from .model_manager import ModelManager
 from .resources import *
 from .Crosssection import *
 from .report import *
-import threading
-import json
 
 
 class GeoQGIS:
@@ -106,6 +92,7 @@ class GeoQGIS:
         self.layersMenu = None
         self.hydromodelsMenu = None
         self.currentModels = None
+        self.myToolBar = None
         
         # Check if plugin was started the first time in current QGIS session
         # Must be set in initGui() to survive plugin reloads
@@ -282,7 +269,7 @@ class GeoQGIS:
         self.makeMenu()
     
     def clearMenu(self):
-        if self.myToolBar:
+        if getattr(self, 'myToolBar', None):
             self.myToolBar.clear()
         if self.menu:
             self.iface.mainWindow().menuBar().removeAction(self.menu.menuAction())
