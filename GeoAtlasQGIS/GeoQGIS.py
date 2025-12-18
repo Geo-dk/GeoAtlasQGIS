@@ -8,7 +8,7 @@
                               -------------------
         begin                : 2019-01-21
         git sha              : $Format:%H$
-        copyright            : (C) 2019 by Geo
+        copyright            : (C) 2025 by Geo
         email                : hmd@geo.dk
  ***************************************************************************/
 
@@ -21,36 +21,25 @@
  *                                                                         *
  ***************************************************************************/
 """
-from venv import create
-import requests
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
-from PyQt5.QtSvg import QSvgWidget, QSvgRenderer
-from PyQt5.QtWebKitWidgets import QWebView
 # Initialize Qt resources from file resources.py
 
-import time
 from qgis.gui import *
 from qgis.core import *
-from operator import itemgetter
 import os
-import locale
-import ctypes
-import urllib.parse
-import tempfile
-from threading import Thread, Lock
 import re
 
 from .utils import *
 from .virtualBoring import *
 from .ApiKeyGetter import *
 from .SliceTool import *
+from .layer_manager import LayerManager
+from .model_manager import ModelManager
 from .resources import *
 from .Crosssection import *
 from .report import *
-import threading
-import json
 
 
 class GeoQGIS:
@@ -85,6 +74,10 @@ class GeoQGIS:
                 QCoreApplication.installTranslator(self.translator)
 
         self.settings = Settings()
+        try:
+            self.settings.settings_updated.disconnect(self.reloadMenu)
+        except TypeError:
+            pass
         self.settings.settings_updated.connect(self.reloadMenu)
         self.options_factory = OptionsFactory(self.settings)
         self.options_factory.setTitle(self.tr('GeoAtlas'))
@@ -96,7 +89,10 @@ class GeoQGIS:
         # Actions for action bar
         self.actions = []
         self.menu = self.tr(u'&GeoQGIS')
+        self.layersMenu = None
+        self.hydromodelsMenu = None
         self.currentModels = None
+        self.myToolBar = None
         
         # Check if plugin was started the first time in current QGIS session
         # Must be set in initGui() to survive plugin reloads
@@ -108,20 +104,18 @@ class GeoQGIS:
         self.modelid = 0 
         self.apiKeyGetter = ApiKeyGetter(self.iface, self.settings)
         self.apiKey = self.apiKeyGetter.getApiKey()
-        self.elemdict = None
+        self.model_manager = ModelManager(self)
         if self.apiKey is not None:
-            self.addModelsToMap(createonlyfile=True)
-            self.createElemDict()
-        self.virtualBoring = VirtualBoringTool(self.iface, self.elemdict, self.apiKeyGetter)
-        self.sliceTool = SliceTool(self.iface, self.elemdict, self.apiKeyGetter)
-        self.crosssectionTool = Crosssection(self.iface, self.elemdict, self.apiKeyGetter, self.settings)
+            self.model_manager.ensureElemDict()
+        self.virtualBoring = VirtualBoringTool(self.iface, self.model_manager.elemdict, self.apiKeyGetter, self.settings)
+        self.sliceTool = SliceTool(self.iface, self.model_manager.elemdict, self.apiKeyGetter, self.settings)
+        self.crosssectionTool = Crosssection(self.iface, self.model_manager.elemdict, self.apiKeyGetter, self.settings)
         self.report = ReportTool(self.iface, self.apiKeyGetter)
+        self.layer_manager = LayerManager(self)
         # Timer is used for regularly updating tokens and keeping access to 
         # wms layers as the tokens only last for 22 hours.
         self.register_timer_for_token_updater()
         self.update_GAL_layers_with_tokens()
-        
-
         
 
     # noinspection PyMethodMayBeStatic
@@ -154,14 +148,31 @@ class GeoQGIS:
         self.timer.singleShot(10000, self.update_GAL_layers_with_tokens)
 
     def makeMenu(self):
+        if self.menu and hasattr(self.menu, 'menuAction'):
+            self.iface.mainWindow().menuBar().removeAction(self.menu.menuAction())
+            self.menu.deleteLater()
+        self.menu = None
         # Tool bar menu.
         self.menu = QMenu( "GeoAtlas", self.iface.mainWindow().menuBar() )
         actions = self.iface.mainWindow().menuBar().actions()
         lastAction = actions[-1]
         self.iface.mainWindow().menuBar().insertMenu( lastAction, self.menu )
-        self.menu.addAction( 'Add models to map', self.addModelsToMap)
+        self.menu.addAction( 'Add models to map', self.model_manager.addModelsToMap)
         #self.menu.addAction( 'Print Api Key', self.apiKeyGetter.printApiKey)
-        self.menu.addAction( 'Add Boreholes to map', self.addBoreHoles)
+        self.menu.addAction( 'Add Boreholes to map', lambda: self.layer_manager.addLayer("GAL - Boreholes", "borehole", "borehole-labels"))
+        self.hydromodelsMenu = QMenu('Add hydromodels to map', self.menu)
+        self.menu.addMenu(self.hydromodelsMenu)
+        self.layer_manager.populateHydromodelsMenu(self.hydromodelsMenu)
+        # Create nested submenu for adding layers
+        # We'll set the title with count after populating
+        self.layersMenu = QMenu('Add layers to map', self.menu)
+        self.menu.addMenu(self.layersMenu)
+        
+        # Populate the layers menu
+        self.layer_manager.populateLayersMenu(self.layersMenu)
+        self.menu.addAction('Refresh hydromodel catalogue', self.layer_manager.refreshHydromodelsMenu)
+        self.menu.addAction('Refresh layer catalogue', self.layer_manager.refreshLayersMenu)
+
         self.menu.addAction( 'Update Tokens', self.update_GAL_layers_with_tokens)
         self.menu.addAction( 'Help', self.helpmessagebox)
         self.menu.addAction( 'About', self.aboutmessagebox)
@@ -171,6 +182,7 @@ class GeoQGIS:
             self.myToolBar = self.iface.addToolBar( u'GeoAtlasToolBar' )
             self.myToolBar.setObjectName( u'GeoAtlasToolBar' )
 
+        self.myToolBar.clear()
         self.addActionsToActionBar()
         # add toolbar button and menu item
 
@@ -178,7 +190,7 @@ class GeoQGIS:
     def update_GAL_layers_with_tokens(self):
         debugMsg("Updating Tokens.")
         self.apiKey = self.apiKeyGetter.getApiKey() # update key
-        self.ensureElemDict()
+        self.model_manager.ensureElemDict()
         
         token_regex = r'(&|%26)?token([=:]|%3A|%3D)(?P<Token>[\d\w\.=+-_\/]*)'
         #Find all layers with tokens in them, which are updatable and created by us.
@@ -227,6 +239,11 @@ class GeoQGIS:
 
     def unload(self):
         self.clearMenu()
+        if self.myToolBar:
+            self.iface.mainWindow().removeToolBar(self.myToolBar)
+            self.myToolBar = None
+        if hasattr(self, 'options_factory'):
+            self.iface.unregisterOptionsWidgetFactory(self.options_factory)
         
     def helpmessagebox(self):
         msgBox = QMessageBox()
@@ -252,109 +269,13 @@ class GeoQGIS:
         self.makeMenu()
     
     def clearMenu(self):
-        del self.myToolBar
-        # Remove the actions and submenus
-        self.menu.clear()
-        # remove the menu bar item
+        if getattr(self, 'myToolBar', None):
+            self.myToolBar.clear()
         if self.menu:
+            self.iface.mainWindow().menuBar().removeAction(self.menu.menuAction())
             self.menu.deleteLater()
-
-    def addBoreHoles(self):
-        if self.apiKeyGetter.getApiKey() is None:
-            return
-
-        self.ensureElemDict()
-
-        debugMsg("Adding boreholes")
-        # Add boreholes with labels as a wms to current project.
-        uri = self.getBoreHoleUri()
-        #debugMsg(uri)
-        wmsLayer = QgsRasterLayer(uri,"GAL - Boreholes","wms")
-        wmsLayer.dataProvider().setDataSourceUri(uri)
-        QgsProject.instance().addMapLayer(wmsLayer, False)
-        add_layer_to_group(wmsLayer)
-        wmsLayer.triggerRepaint()
-
-    def getBoreHoleUri(self):
-        # Build up the uri
-        quri = QgsDataSourceUri()
-        quri.setParam("IgnoreGetFeatureInfoUrl", '1') 
-        quri.setParam("IgnoreGetMapUrl", '1')
-        quri.setParam("contextualWMSLegend", '0')
-        quri.setParam("crs", 'EPSG:25832')
-        quri.setParam("dpiMode", '7')
-        quri.setParam("featureCount", '10')
-        quri.setParam("format", 'image/png')
-        quri.setParam("layers", 'GEO-Services:borehole')
-        quri.setParam("styles", 'GEO-Services:borehole-labels')
-        url = 'https://data.geo.dk/mapv2/GEO-Services/wms?VERSION=1.3.0&FORMAT=image%2Fpng&TRANSPARENT=true&layers=borehole&styles=borehole-labels&CRS=EPSG%3A25832&STYLES='
-        url += "&token=" + str(self.apiKeyGetter.getApiKeyNoBearer())
-        quri.setParam("url", url)
-        uri = str(quri.encodedUri())[2:-1]
-        debugMsg("Borehole uri: " + urllib.parse.unquote(uri))
-        return uri
+            self.menu = None
+        self.layersMenu = None
+        self.hydromodelsMenu = None
 
 
-    def addModelsToMap(self, createonlyfile = False):
-        if createonlyfile: debugMsg("Creating models.json file")
-        else: debugMsg("Adding models to map")
-        r = requests.get("https://data.geo.dk/api/v3/geomodel?geoareaid=1&format=geojson", headers={'authorization': self.apiKeyGetter.getApiKey()})
-        json = r.content.decode('utf-8').replace('\\"', '"')[1:-1]
-        
-        tmppath = str(tempfile.gettempdir()) + os.sep + "GeoAtlas" + os.sep
-        if not os.path.exists(tmppath):
-            os.makedirs(tmppath)
-
-        file = open(tmppath + "models.json", "w")
-        file.write(json)
-        jsonpath = os.path.realpath(file.name)
-        file.close()
-
-        if not createonlyfile:
-            vlayer = QgsVectorLayer(jsonpath,"GAL - Models", "ogr")
-            vlayer.setCrs(QgsCoordinateReferenceSystem("EPSG:25832")) # needs to be done to make sure its not displayed in some other default CRS
-            
-            if vlayer.isValid():
-                
-                #Set style with: vlayer.renderer().symbol().symbolLayers()[0].
-                #Documented here: https://qgis.org/api/classQgsSimpleFillSymbolLayer.html
-                #Remove fill and only have outline.
-                vlayer.renderer().symbol().symbolLayers()[0].setBrushStyle(0)
-                QgsProject.instance().addMapLayer(vlayer, False)
-                add_layer_to_group(vlayer)
-        if self.elemdict is None:
-            self.createElemDict()
-
-    def createElemDict(self):
-
-        tmppath = str(tempfile.gettempdir()) + os.sep + "GeoAtlas" + os.sep
-        if not os.path.exists(tmppath):
-            os.makedirs(tmppath)
-        
-        fh = open(tmppath + 'models.json', encoding='utf-8')
-        tree = json.load(fh)
-        ETdict = {}
-
-        for child in tree["features"]:
-            id = child['properties']['Id']
-            type = child['geometry']['type']
-            coordlist = child['geometry']['coordinates']
-            if type == 'MultiPolygon':
-                coordlist = [item for sublist in coordlist for item in sublist] #flatten one level
-            ETdict[id] = coordlist
-        
-        self.elemdict = ETdict
-        fh.close()
-
-
-    def ensureElemDict(self):
-        if self.apiKeyGetter.getApiKey() is None:
-            return
-
-        model_path = str(tempfile.gettempdir()) + os.sep + "GeoAtlas" + os.sep + 'models.json'
-        if not os.path.exists(model_path) or os.path.getsize(model_path) < 5000:
-            #update models if doesn't exist or under 5kb
-            self.addModelsToMap(createonlyfile=True)
-        if self.elemdict is None and os.path.getsize(model_path) > 5000:
-            # create if doesn't exist and model.json is larger than 5kb
-            self.createElemDict()

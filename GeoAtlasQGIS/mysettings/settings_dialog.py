@@ -33,8 +33,8 @@ class ConfigDialog(WIDGET, BASE, SettingDialog):
     def __init__(self, settings):
         super(ConfigDialog, self).__init__(None)
         self.setupUi(self)
-        SettingDialog.__init__(self, settings)
         self.settings = settings
+        
         self.use_custom_file.setChecked(self.settings.value('use_custom_file'))
         if self.settings.value('use_custom_file'):
             self.browseLocalFileButton.setEnabled(True)
@@ -51,6 +51,8 @@ class ConfigDialog(WIDGET, BASE, SettingDialog):
         self.browseLocalFileButton.clicked.connect(self.browseLocalFile)
         self.use_custom_file.clicked.connect(self.useLocalChanged)
         self.role_checkbox.clicked.connect(self.useCustomRoleChanged)
+        
+        SettingDialog.__init__(self, settings)
         
     def browseLocalFile(self):
         qpt_file, f = QFileDialog.getOpenFileName(
@@ -80,3 +82,4 @@ class ConfigDialog(WIDGET, BASE, SettingDialog):
             self.role.setEnabled(False)
             self.role.setText('')
             self.settings.set_value('role', '')
+

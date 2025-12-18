@@ -16,6 +16,10 @@ class Settings(SettingManager):
         self.add_setting(String('username', Scope.Global, ''))
         self.add_setting(String('password', Scope.Global, ''))
         self.add_setting(String('role', Scope.Global, ''))
+        self.add_setting(String('dataforsyningen_token', Scope.Global, ''))
+        self.add_setting(String('datafordeler_username', Scope.Global, ''))
+        self.add_setting(String('datafordeler_password', Scope.Global, ''))
+        self.add_setting(Bool('use_dev_environment', Scope.Global, False))
         self.add_setting(Bool('use_custom_file', Scope.Global, False))
         self.add_setting(Bool('role_checkbox', Scope.Global, False))
         path = QFileInfo(os.path.realpath(__file__)).path()
@@ -39,4 +43,11 @@ class Settings(SettingManager):
             return self.value('custom_qpt_file')
         else:
             return ''
+    
+    def get_geo_base_url(self):
+        use_dev = self.value('use_dev_environment')
+        if use_dev:
+            return 'https://datau.geo.dk'
+        else:
+            return 'https://data.geo.dk'
 

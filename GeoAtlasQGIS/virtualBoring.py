@@ -7,9 +7,10 @@ from .ApiKeyGetter import *
 from .virtualBoring_dialog import *
 
 class VirtualBoringTool():
-    def __init__(self, iface, elemtree, apiKeyGetter):
+    def __init__(self, iface, elemtree, apiKeyGetter, usersettings):
         self.iface = iface
         self.apiKeyGetter = apiKeyGetter
+        self.usersettings = usersettings
         self.dlg = None
         self.dirpath = os.path.dirname(os.path.realpath(__file__))
         self.workinglayer = None
@@ -86,7 +87,8 @@ class VirtualBoringTool():
         self.workinglayer.loadNamedStyle(self.dirpath + "\\styles\\dotstyle.qml")
 
     def makeBoring(self, task, x, y, modelid, depth, apikey):
-        return requests.get("https://data.geo.dk/api/v3/virtualboring?geoareaid=1&modelId= " + str(modelid) + "&type=bar&x=" + str(x) + "&y=" + str(y) + "&maxDepth=" + str(depth),
+        base_url = self.usersettings.get_geo_base_url()
+        return requests.get(f"{base_url}/api/v3/virtualboring?geoareaid=1&modelId=" + str(modelid) + "&type=bar&x=" + str(x) + "&y=" + str(y) + "&maxDepth=" + str(depth),
                                headers={'authorization': apikey})
 
     def makeUi(self):
@@ -100,9 +102,7 @@ class VirtualBoringTool():
         pass
 
     def updateAvailableModels(self, coords):
-        self.currentModels = get_models_for_point(coords, self.elemdict, self.apiKeyGetter.getApiKey())
-        #TODO: If no models exist for this area, use the Terræn model.
-        #TODO: Learn what terræn model is lol
+        self.currentModels = get_models_for_point(coords, self.elemdict, self.apiKeyGetter.getApiKey(), self.usersettings.get_geo_base_url())
 
     def getCurrentModel(self):
         temp_model = None

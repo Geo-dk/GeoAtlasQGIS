@@ -4,18 +4,13 @@ from .Crosssection_dialog import CrosssectionDialog
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
-from PyQt5.QtSvg import QSvgWidget, QSvgRenderer
-from PyQt5.QtWebKitWidgets import QWebView
 from qgis.gui import *
 from qgis.core import *
-from operator import itemgetter
 from qgis.PyQt.QtXml import QDomDocument
 import os 
 from .virtualBoring_dialog import *
 import math
-import threading
 import requests
-import urllib.parse
 import math
 import processing
 from processing.core.Processing import Processing
@@ -214,7 +209,8 @@ class Crosssection():
             return line
     
     def updateAvailableModels(self, coords):
-        self.currentModels = getModelsFromCoordList(coords, self.apiKeyGetter.getApiKey())
+        base_url = self.usersettings.get_geo_base_url()
+        self.currentModels = getModelsFromCoordList(coords, self.apiKeyGetter.getApiKey(), base_url)
         #If no models exist for this area, use the Terræn model.
         if self.currentModels:
             try:
@@ -234,12 +230,14 @@ class Crosssection():
             self.dlg.setModels([item['Name'] for item in self.currentModels if 'Name' in item])
 
     def getCrosssectionFromUri(self, coords, settings):
-        url = "https://data.geo.dk/api/v3/crosssection?geoareaid=1&path=" + str(coords).replace(" ", "") 
+        base_url = self.usersettings.get_geo_base_url()
+        url = f"{base_url}/api/v3/crosssection?geoareaid=1&path=" + str(coords).replace(" ", "") 
         url += "&geomodelid=" + str(settings.modelid)
         url += "&width=" + str(settings.width)
         url += "&height=" + str(settings.height)
         url += "&maxdepth=" + str(settings.depth)
-        url += "&linepointdistance=" + str(settings.linepoint)
+        url += "&linepointdistance="
+        url += str(settings.linepoint) if settings.modelid != -1 else "-1"
         if settings.drilldistance > 0:
             url += "&MaxBoringDistance=" + str(settings.drilldistance)
         # when i am debugging making large / weird crosssections 
@@ -299,6 +297,8 @@ class Crosssection():
 
     def createLegend(self, section):
         # Behavior should be the same as the websites version here. 
+        if 'Model' not in section or section['Model'] is None or 'GeoUnits' not in section['Model']:
+            return ''
         html = '<ul class="signatur">'
         for geounit in section['Model']['GeoUnits']:
             li = '<li data><span class="signatur-geoenhed-'
@@ -314,7 +314,8 @@ class Crosssection():
         self.dlg.setHtml(svg)
 
     def getAvailableModels(self, coordinates):
-        return getModelsFromCoordList(coordinates, self.apiKeyGetter.getApiKey())
+        base_url = self.usersettings.get_geo_base_url()
+        return getModelsFromCoordList(coordinates, self.apiKeyGetter.getApiKey(), base_url)
 
     def boreHoleBuffer(self, settings):
         layer = self.getworkinglayer()
