@@ -1,4 +1,5 @@
 from PyQt5.QtWidgets import QMenu
+from PyQt5.QtGui import QIcon
 import requests
 import time
 import urllib.parse
@@ -6,6 +7,7 @@ import xml.etree.ElementTree as ET
 import base64
 import json
 from qgis.core import QgsProject, QgsRasterLayer, QgsDataSourceUri
+from qgis.core import QgsProject, QgsRasterLayer, QgsDataSourceUri, QgsApplication
 
 from .utils import debugMsg, add_layer_to_group
 
@@ -46,6 +48,7 @@ class LayerManager:
         
         def add_layer_menu_item(menu, layer):
             layername = (layer.get('LayerName', '') or '').strip()
+        def resolve_custom_url(layer):
             custom_url = layer.get('Url', None)
             url_is_available = True
             missing_auth_message = ""
@@ -60,6 +63,21 @@ class LayerManager:
                 url_is_available_auth, missing_auth_message, _ = self.check_auth_availability(custom_url)
                 if not url_is_available_auth:
                     url_is_available = False
+            return custom_url, url_is_available, missing_auth_message
+
+        def choose_default_style(layer):
+            map_layer_styles = layer.get('MapLayerStyles', [])
+            base_style = (layer.get('Style', '') or '').strip()
+            has_valid_base_style = base_style and base_style.lower() not in ['none', '[empty]']
+            if has_valid_base_style:
+                return base_style
+            if map_layer_styles:
+                return (map_layer_styles[0].get('Name', '') or '').strip()
+            return ''
+
+        def add_layer_menu_item(menu, layer):
+            layername = (layer.get('LayerName', '') or '').strip()
+            custom_url, url_is_available, missing_auth_message = resolve_custom_url(layer)
             
             if is_layer_invalid(layername) or not url_is_available:
                 if not url_is_available:
@@ -133,6 +151,25 @@ class LayerManager:
                 subgroup_count = sum(count_layer_styles(l) for l in subgroup_layers)
                 subgroupSubmenu = QMenu(f"{subgroup_name} ({subgroup_count})", groupSubmenu)
                 groupSubmenu.addMenu(subgroupSubmenu)
+                
+                def add_all_layers(layers_list):
+                    for subgroup_layer in reversed(layers_list):
+                        layername = (subgroup_layer.get('LayerName', '') or '').strip()
+                        custom_url, url_is_available, _ = resolve_custom_url(subgroup_layer)
+                        if is_layer_invalid(layername) or not url_is_available:
+                            continue
+                        style = choose_default_style(subgroup_layer)
+                        self.addLayer(subgroup_layer.get('Name', 'Unavngivet Lag'), layername, style, custom_url)
+
+                add_all_icon = QgsApplication.getThemeIcon('/mActionAddLayer.svg')
+                if add_all_icon.isNull():
+                    add_all_icon = QIcon.fromTheme('list-add')
+                add_all_action = subgroupSubmenu.addAction(add_all_icon, "Add all layers")
+                bold_font = add_all_action.font()
+                bold_font.setBold(True)
+                add_all_action.setFont(bold_font)
+                add_all_action.triggered.connect(lambda checked=False, ls=subgroup_layers: add_all_layers(ls))
+                subgroupSubmenu.addSeparator()
                 
                 for layer in subgroup_layers:
                     add_layer_menu_item(subgroupSubmenu, layer)
@@ -519,13 +556,11 @@ class LayerManager:
         cached = self._capabilities_cache.get(capability_url)
         now = time.time()
         if cached is not None:
-            # Backward compatibility: old cache stored only the names list
             if isinstance(cached, list):
                 return cached
             names, expiry = cached
             if expiry is None or now < expiry:
                 return names
-            # expired negative cache
             self._capabilities_cache.pop(capability_url, None)
 
         try:
@@ -534,7 +569,6 @@ class LayerManager:
         except requests.RequestException as exc:
             host = urllib.parse.urlparse(capability_url).netloc
             debugMsg(f"    Could not load capabilities from '{host}': {exc}")
-            # cache negative result for a short period to avoid spamming retries
             self._capabilities_cache[capability_url] = ([], now + self._capabilities_retry_after_seconds)
             return []
 
@@ -556,7 +590,6 @@ class LayerManager:
             host = urllib.parse.urlparse(capability_url).netloc
             debugMsg(f"    Discovered {len(names)} layer name(s) from '{host}' capabilities")
 
-        # Successful fetch: cache without expiry (until plugin/session ends)
         self._capabilities_cache[capability_url] = (names, None)
         return names
 
