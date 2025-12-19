@@ -456,7 +456,8 @@ class LayerManager:
 
         try:
             parts = token.split('.')
-            decoded_bytes = base64.urlsafe_b64decode(parts[1].encode('utf-8'))
+            padded = parts[1] + '=' * (-len(parts[1]) % 4)
+            decoded_bytes = base64.urlsafe_b64decode(padded.encode('utf-8'))
             payload = json.loads(decoded_bytes.decode('utf-8'))
 
             value = payload.get('GAL.GVLLoggers')
