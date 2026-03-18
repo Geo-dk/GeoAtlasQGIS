@@ -32,6 +32,7 @@ import os
 import re
 
 from .utils import *
+from .Borehole import *
 from .virtualBoring import *
 from .ApiKeyGetter import *
 from .SliceTool import *
@@ -108,6 +109,7 @@ class GeoQGIS:
         if self.apiKey is not None:
             self.model_manager.ensureElemDict()
         self.virtualBoring = VirtualBoringTool(self.iface, self.model_manager.elemdict, self.apiKeyGetter, self.settings)
+        self.boreholeTool = BoreholeTool(self.iface, self.apiKeyGetter, self.settings)
         self.sliceTool = SliceTool(self.iface, self.model_manager.elemdict, self.apiKeyGetter, self.settings)
         self.crosssectionTool = Crosssection(self.iface, self.model_manager.elemdict, self.apiKeyGetter, self.settings)
         self.report = ReportTool(self.iface, self.apiKeyGetter)
@@ -160,6 +162,7 @@ class GeoQGIS:
         self.menu.addAction( 'Add models to map', self.model_manager.addModelsToMap)
         #self.menu.addAction( 'Print Api Key', self.apiKeyGetter.printApiKey)
         self.menu.addAction( 'Add Boreholes to map', lambda: self.layer_manager.addLayer("GAL - Boreholes", "borehole", "borehole-labels"))
+        self.menu.addAction( 'Show borehole', self.boreholeTool.changeToBoreholeTool)
         self.hydromodelsMenu = QMenu('Add hydromodels to map', self.menu)
         self.menu.addMenu(self.hydromodelsMenu)
         self.layer_manager.populateHydromodelsMenu(self.hydromodelsMenu)
@@ -227,9 +230,12 @@ class GeoQGIS:
         slicetool = QAction(QIcon( self.plugin_dir + "/images/slice.png"), 'Open Slice view', self.iface.mainWindow())
         slicetool.triggered.connect(self.sliceTool.startSliceTool)
         self.myToolBar.addAction(slicetool)
-        boretool = QAction(QIcon( self.plugin_dir + "/images/bore.png"), 'Make virtual borehole', self.iface.mainWindow())
+        boretool = QAction(QIcon( self.plugin_dir + "/images/vbore.png"), 'Make virtual borehole', self.iface.mainWindow())
         boretool.triggered.connect(self.virtualBoring.changeToBoringTool)
         self.myToolBar.addAction(boretool)
+        boreholetool = QAction(QIcon( self.plugin_dir + "/images/nearestBorehole.png"), 'Show borehole', self.iface.mainWindow())
+        boreholetool.triggered.connect(self.boreholeTool.changeToBoreholeTool)
+        self.myToolBar.addAction(boreholetool)
 
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
